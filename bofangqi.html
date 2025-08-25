@@ -12,6 +12,16 @@
             --background-color: #121212;
             --shadow-color: rgba(0, 0, 0, 0.5);
             --highlight-color: rgba(255, 255, 255, 0.1);
+            --bg-opacity: 0.3; /* 新增：背景不透明度变量 */
+        }
+
+        /* 新增：白天模式的颜色变量 */
+        body.light-theme {
+            --primary-color: #121212;
+            --secondary-color: #555555;
+            --background-color: #f0f0f0;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+            --highlight-color: rgba(0, 0, 0, 0.05);
         }
 
         body {
@@ -25,6 +35,7 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* --- Logo样式 --- */
@@ -37,7 +48,7 @@
             color: var(--primary-color);
             opacity: 0.2;
             z-index: 5;
-            pointer-events: none; /* 让鼠标可以穿透logo点击下面的内容 */
+            pointer-events: none;
         }
 
         /* --- 背景层 --- */
@@ -49,9 +60,9 @@
             height: 100%;
             background-size: cover;
             background-position: center;
-            opacity: 0.3;
+            opacity: var(--bg-opacity); /* 修改：使用变量 */
             z-index: -1;
-            transition: background-image 0.5s ease-in-out;
+            transition: background-image 0.5s ease-in-out, opacity 0.3s ease;
         }
 
         /* --- 主播放器容器 --- */
@@ -77,6 +88,7 @@
             position: relative;
             cursor: pointer;
             flex-shrink: 0;
+            transition: box-shadow 0.3s ease;
         }
         
         #album-art {
@@ -90,7 +102,6 @@
             transform: scale(1.05);
         }
 
-        /* --- 唱片外观切换 --- */
         .album-art-wrapper::after {
             content: '';
             position: absolute;
@@ -133,13 +144,13 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            min-height: 1.5rem; /* 确保空状态下也有高度可点击 */
+            min-height: 1.5rem;
         }
 
         #song-title:focus {
             outline: none;
             background-color: var(--highlight-color);
-            white-space: normal; /* 聚焦时允许换行编辑 */
+            white-space: normal;
         }
         
         #song-title:empty::before {
@@ -157,7 +168,7 @@
         .progress-bar {
             width: 100%;
             height: 5px;
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(128, 128, 128, 0.2);
             border-radius: 5px;
             cursor: pointer;
             margin-bottom: 0.5rem;
@@ -212,7 +223,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, background-color 0.3s ease, color 0.3s ease;
         }
         #play-pause-btn:hover {
             transform: scale(1.05);
@@ -239,6 +250,7 @@
             color: var(--primary-color);
             cursor: pointer;
             padding: 8px;
+            transition: color 0.3s ease;
         }
         #settings-btn svg {
             width: 24px;
@@ -262,13 +274,17 @@
             transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
         }
 
+        body.light-theme .settings-menu {
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
         .settings-menu.active {
             opacity: 1;
             visibility: visible;
             transform: translateY(0);
         }
 
-        .upload-label, #toggle-skin-btn {
+        .upload-label, .menu-btn {
             color: var(--primary-color);
             padding: 8px 15px;
             border-radius: 5px;
@@ -282,12 +298,30 @@
             font-family: inherit;
         }
 
-        .upload-label:hover, #toggle-skin-btn:hover {
+        .upload-label:hover, .menu-btn:hover {
             background-color: var(--highlight-color);
         }
 
         .hidden-input {
             display: none;
+        }
+
+        /* 新增：设置项样式 */
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            gap: 15px;
+        }
+        .setting-item label {
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+        input[type="range"] {
+            width: 100px;
+            cursor: pointer;
         }
 
         /* --- 移动端适配 --- */
@@ -315,7 +349,7 @@
     <div class="player-container">
         <!-- 专辑封面 -->
         <label for="album-art-upload" class="album-art-wrapper" id="album-art-wrapper">
-            <img id="album-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzQ0NCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4IDggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjxwYXRoIGQ9Ik0xMiA2Yy0zLjMxIDAtNiAyLjY5LTYgNnMyLjY5IDYgNiA2IDYtMi40OSA2LTZzLTIuNjktNi02LTZ6bTAgMTBjLTIuMiAwLTQtMS44LTQtNHMxLjgtNCA0IDQgNCAxLjggNCA0LTEuOC00LTQtNHoiLz48L3N2Zz4=" alt="专辑封面">
+            <img id="album-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzQ0NCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4IDggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjxwYXRoIGQ9Ik0xMiA2Yy0zLjMxIDAtNiAyLjY5LTYgNnMyLjY5IDYgNiA2IDYtMi42OSA2LTZzLTIuNjktNi02LTZ6bTAgMTBjLTIuMiAwLTQtMS44LTQtNHMxLjgtNCA0IDQgNCAxLjggNCA0LTEuOC00LTQtNHoiLz48L3N2Zz4=" alt="专辑封面">
         </label>
 
         <!-- 歌曲信息 -->
@@ -347,23 +381,25 @@
         </div>
     </div>
     
-    <!-- 音频播放器元素 (隐藏) -->
     <audio id="audio-player"></audio>
 
-    <!-- 设置菜单 -->
     <div class="settings-container">
         <button id="settings-btn" title="设置">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path></svg>
         </button>
         <div class="settings-menu" id="settings-menu">
             <label for="music-upload" class="upload-label">上传音乐</label>
             <label for="album-art-upload" class="upload-label">更换封面</label>
             <label for="bg-upload" class="upload-label">更换背景</label>
-            <button id="toggle-skin-btn" class="upload-label">切换唱片样式</button>
+            <button id="toggle-skin-btn" class="menu-btn">切换唱片样式</button>
+            <button id="theme-toggle-btn" class="menu-btn">切换日/夜间模式</button> <!-- 新增 -->
+            <div class="setting-item"> <!-- 新增 -->
+                <label for="bg-opacity-slider">背景不透明度</label>
+                <input type="range" id="bg-opacity-slider" min="0" max="100" value="30">
+            </div>
         </div>
     </div>
 
-    <!-- 隐藏的文件上传输入框 -->
     <input type="file" id="music-upload" class="hidden-input" accept="audio/*">
     <input type="file" id="album-art-upload" class="hidden-input" accept="image/*">
     <input type="file" id="bg-upload" class="hidden-input" accept="image/*">
@@ -371,6 +407,7 @@
 
     <script>
         // --- 元素获取 ---
+        const body = document.body;
         const audioPlayer = document.getElementById('audio-player');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const playIcon = document.getElementById('play-icon');
@@ -388,15 +425,38 @@
         const musicUploadInput = document.getElementById('music-upload');
         const albumArtUploadInput = document.getElementById('album-art-upload');
         const bgUploadInput = document.getElementById('bg-upload');
-        const toggleSkinBtn = document.getElementById('toggle-skin-btn'); // 新增
+        const toggleSkinBtn = document.getElementById('toggle-skin-btn');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn'); // 新增
+        const bgOpacitySlider = document.getElementById('bg-opacity-slider'); // 新增
 
         // --- 状态变量 ---
         let isPlaying = false;
         let currentObjectURL = null;
 
-        // 页面加载时检查并应用保存的皮肤
-        if (localStorage.getItem('albumSkin') === 'true') {
-            albumArtWrapper.classList.add('vinyl-style');
+        // --- 初始化设置 ---
+        function applyInitialSettings() {
+            // 1. 应用主题
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                body.classList.add('light-theme');
+            }
+
+            // 2. 应用唱片皮肤
+            if (localStorage.getItem('albumSkin') === 'true') {
+                albumArtWrapper.classList.add('vinyl-style');
+            }
+
+            // 3. 应用背景不透明度
+            const savedOpacity = localStorage.getItem('bgOpacity');
+            if (savedOpacity !== null) {
+                const opacityValue = parseFloat(savedOpacity);
+                document.documentElement.style.setProperty('--bg-opacity', opacityValue);
+                bgOpacitySlider.value = opacityValue * 100;
+            } else {
+                // 如果没有保存的值，确保滑块与CSS默认值同步
+                const initialOpacity = getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity');
+                bgOpacitySlider.value = parseFloat(initialOpacity) * 100;
+            }
         }
 
         // --- 函数 ---
@@ -431,7 +491,6 @@
         }
 
         // --- 事件监听 ---
-
         playPauseBtn.addEventListener('click', togglePlayPause);
         audioPlayer.addEventListener('play', () => { isPlaying = true; updatePlayPauseUI(); });
         audioPlayer.addEventListener('pause', () => { isPlaying = false; updatePlayPauseUI(); });
@@ -494,12 +553,29 @@
             }
         });
 
-        // 新增：切换唱片外观
         toggleSkinBtn.addEventListener('click', () => {
             albumArtWrapper.classList.toggle('vinyl-style');
             localStorage.setItem('albumSkin', albumArtWrapper.classList.contains('vinyl-style'));
             settingsMenu.classList.remove('active');
         });
+
+        // 新增：切换主题模式
+        themeToggleBtn.addEventListener('click', () => {
+            body.classList.toggle('light-theme');
+            const currentTheme = body.classList.contains('light-theme') ? 'light' : 'dark';
+            localStorage.setItem('theme', currentTheme);
+            settingsMenu.classList.remove('active'); // 操作后关闭菜单
+        });
+
+        // 新增：调整背景不透明度
+        bgOpacitySlider.addEventListener('input', (e) => {
+            const opacityValue = e.target.value / 100;
+            document.documentElement.style.setProperty('--bg-opacity', opacityValue);
+            localStorage.setItem('bgOpacity', opacityValue);
+        });
+
+        // --- 页面加载时执行 ---
+        document.addEventListener('DOMContentLoaded', applyInitialSettings);
         
     </script>
 
