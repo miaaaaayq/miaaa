@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小剧场文库</title>
+    <style>
+        :root {
+            /* Default Theme Variables */
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --title-color: #0056b3;
+            --border-color: #e0e0e0;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --sidebar-text: #333;
+            --sidebar-hover-bg: #f0f0f0;
+            --font-family: "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            --font-size: 18px;
+            --line-height: 1.8;
+            --accent-color: #ffc107; /* For favorite star */
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #bg-image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -1;
+            transition: opacity 0.3s;
+        }
+
+        /* --- Main Layout & Header --- */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), transparent);
+            z-index: 100;
+        }
+
+        .header-controls-left, .header-controls-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--text-color);
+            opacity: 0.7;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .header-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        .header-btn.favorite-active {
+            color: var(--accent-color);
+            opacity: 1;
+        }
+
+        /* --- Side Panels (General) --- */
+        .side-panel {
+            position: fixed;
+            top: 0;
+            height: 100vh;
+            width: 320px;
+            max-width: 80%;
+            background-color: var(--sidebar-bg);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out, background-color 0.3s;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-panel h2 {
+            padding: 20px;
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        /* Navigation & Favorites Panel */
+        #nav-panel, #favorites-panel { left: 0; transform: translateX(-100%); }
+        #nav-panel.open, #favorites-panel.open { transform: translateX(0); }
+        .toc-list {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .toc-list .file-header {
+            padding: 15px 20px 5px;
+            font-weight: bold;
+            color: var(--title-color);
+            background-color: var(--sidebar-hover-bg);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .toc-list .file-header:first-child { border-top: none; }
+        .toc-list a {
+            display: block;
+            padding: 12px 20px 12px 30px;
+            text-decoration: none;
+            color: var(--sidebar-text);
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+        .toc-list a:hover { background-color: var(--sidebar-hover-bg); }
+
+        /* --- Settings Panel (New Earth Tone UI) --- */
+        #settings-panel { 
+            right: 0; 
+            transform: translateX(100%); 
+            background-color: #fdfaf6; /* Parchment background */
+            color: #5d4037; /* Dark brown text */
+        }
+        #settings-panel.open { transform: translateX(0); }
+        #settings-panel h2 {
+            color: #4e342e; /* Richer brown for header */
+            border-bottom-color: #d7ccc8; /* Lighter border */
+        }
+
+        .settings-content {
+            padding: 10px 25px 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Slightly reduced gap */
+        }
+        .setting-group { 
+            display: flex; 
+            flex-direction: column;
+            padding-top: 20px;
+            border-top: 1px solid #d7ccc8; /* Separator line */
+        }
+        .setting-group:first-child {
+            border-top: none;
+            padding-top: 10px;
+        }
+
+        .setting-group label { 
+            margin-bottom: 12px; 
+            font-weight: 600; /* Bolder labels */
+            font-size: 0.95rem;
+            color: #4e342e;
+        }
+        
+        .setting-group select, .setting-group input[type="color"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d7ccc8;
+            border-radius: 8px; /* Softer radius */
+            font-size: 0.9rem;
+            background-color: #fff;
+            color: #5d4037;
+        }
+        .setting-group input[type="color"] {
+            padding: 5px;
+            height: 45px;
+        }
+
+        .color-presets { display: flex; gap: 15px; margin-top: 5px; }
+        .color-presets button {
+            width: 35px; height: 35px; border-radius: 50%;
+            border: 2px solid #d7ccc8; 
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .color-presets button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .action-btn {
+            padding: 12px 15px; font-size: 0.9rem; font-weight: bold; color: white;
+            border: none; border-radius: 8px; cursor: pointer; 
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .action-btn:hover { 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .action-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .btn-import { background-color: #8d6e63; } /* Muted brown */
+        .btn-import:hover { background-color: #795548; }
+        .btn-export { background-color: #689f38; } /* Muted olive green */
+        .btn-export:hover { background-color: #558b2f; }
+        .btn-danger { background-color: #bcaaa4; } /* Soft, warm gray */
+        .btn-danger:hover { background-color: #a1887f; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* Custom Slider Styles */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #d7ccc8; /* Track color */
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #8d6e63; /* Thumb color */
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #8d6e63;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+
+        /* --- Overlay --- */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 150;
+        }
+        #overlay.active { opacity: 1; visibility: visible; }
+
+        /* --- Main Content Viewer --- */
+        .viewer-container { max-width: 800px; margin: 0 auto; padding: 100px 40px 40px; }
+        .file-title-in-content {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--title-color);
+            font-size: 1.5em;
+            color: var(--title-color);
+        }
+        .theatre-item {
+            margin-bottom: 60px; padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .theatre-item:last-child { border-bottom: none; }
+        .theatre-title-container {
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+            margin-bottom: 20px;
+        }
+        .theatre-title-container h2 { font-size: 1.8em; color: var(--title-color); text-align: center; }
+        .favorite-btn { font-size: 1.5em; cursor: pointer; background: none; border: none; color: #ccc; }
+        .favorite-btn.is-favorite { color: var(--accent-color); }
+        .theatre-item p { white-space: pre-wrap; }
+
+        /* --- Initial Upload Screen --- */
+        #upload-screen {
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; height: 100vh; text-align: center; padding: 20px;
+        }
+        #upload-screen h1 { font-size: 2.5rem; color: var(--title-color); }
+        #upload-screen p { font-size: 1.2rem; margin: 15px 0 30px; }
+        #upload-feedback {
+            color: #dc3545;
+            margin-top: 20px;
+            max-width: 600px;
+            text-align: left;
+            background-color: rgba(220, 53, 69, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        .upload-btn {
+            padding: 15px 30px; font-size: 1.1rem; font-weight: bold; color: white;
+            background-color: var(--title-color); border: none; border-radius: 8px;
+            cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+        }
+        .upload-btn:hover { background-color: #00458e; }
+        .upload-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div id="bg-image-container"></div>
+
+    <!-- Side Panels -->
+    <nav id="nav-panel" class="side-panel">
+        <h2>章节目录</h2>
+        <ul id="toc-list" class="toc-list"></ul>
+    </nav>
+    <nav id="favorites-panel" class="side-panel">
+        <h2>我的收藏</h2>
+        <ul id="favorites-list" class="toc-list"></ul>
+    </nav>
+    <aside id="settings-panel" class="side-panel">
+        <h2>阅读设置</h2>
+        <div class="settings-content">
+            <div class="setting-group">
+                <label>文件操作</label>
+                <div class="btn-group">
+                    <button id="import-more-btn" class="action-btn btn-import">追加导入</button>
+                    <button id="export-all-btn" class="action-btn btn-export">导出全部</button>
+                    <button id="export-fav-btn" class="action-btn btn-export">仅导出收藏</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label for="bg-color-picker">背景颜色</label>
+                <div class="color-presets">
+                    <button style="background-color: #ffffff;" data-theme='{"bg": "#ffffff", "text": "#333333", "title": "#0056b3", "sidebar": "rgba(255, 255, 255, 0.95)"}'></button>
+                    <button style="background-color: #f5f5dc;" data-theme='{"bg": "#f5f5dc", "text": "#584c3e", "title": "#8b4513", "sidebar": "rgba(245, 245, 220, 0.95)"}'></button>
+                    <button style="background-color: #282c34;" data-theme='{"bg": "#282c34", "text": "#abb2bf", "title": "#61afef", "sidebar": "rgba(40, 44, 52, 0.95)"}'></button>
+                </div>
+                <input type="color" id="bg-color-picker" style="margin-top: 15px;">
+            </div>
+            <div class="setting-group">
+                <label>自定义背景图片</label>
+                <div class="btn-group">
+                    <button id="bg-image-upload-btn" class="action-btn btn-import">选择图片</button>
+                    <button id="bg-image-remove-btn" class="action-btn btn-danger">移除图片</button>
+                </div>
+                <label for="bg-opacity-slider" style="margin-top: 15px;">图片不透明度: <span id="bg-opacity-value">100%</span></label>
+                <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="1">
+            </div>
+            <div class="setting-group">
+                <label for="font-family-select">阅读字体</label>
+                <select id="font-family-select">
+                    <option value='"Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif'>系统默认 (黑体)</option>
+                    <option value='Georgia, "Times New Roman", "KaiTi", "STKaiti", "FangSong", "STFangsong", serif'>优雅宋体 (衬线)</option>
+                    <option value='monospace'>等宽字体</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label for="font-size-slider">字体大小: <span id="font-size-value">18px</span></label>
+                <input type="range" id="font-size-slider" min="12" max="32" step="1" value="18">
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="main-content" style="display: none;">
+        <header class="main-header">
+            <div class="header-controls-left">
+                <button id="menu-btn" class="header-btn">☰</button>
+                <button id="favorites-btn" class="header-btn">★</button>
+            </div>
+            <div class="header-controls-right">
+                <button id="settings-btn" class="header-btn">⚙️</button>
+            </div>
+        </header>
+        <div id="viewer" class="viewer-container"></div>
+    </main>
+
+    <!-- Initial Upload Screen -->
+    <div id="upload-screen">
+        <h1>小剧场文库</h1>
+        <p>请选择您导出的 <code>.json</code> 文件以开始阅读。</p>
+        <button id="upload-btn" class="upload-btn">选择文件</button>
+        <div id="upload-feedback"></div>
+        <input type="file" id="file-input" accept=".json" multiple style="display: none;">
+        <input type="file" id="bg-image-input" accept="image/*" style="display: none;">
+    </div>
+
+    <!-- Overlay for side panels -->
+    <div id="overlay"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- State ---
+        let allFilesData = [];
+        let favoriteIds = new Set();
+
+        // --- DOM Elements ---
+        const uploadScreen = document.getElementById('upload-screen');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        const uploadFeedback = document.getElementById('upload-feedback');
+        const mainContent = document.getElementById('main-content');
+        const viewer = document.getElementById('viewer');
+        const overlay = document.getElementById('overlay');
+        
+        const menuBtn = document.getElementById('menu-btn');
+        const navPanel = document.getElementById('nav-panel');
+        const tocList = document.getElementById('toc-list');
+        
+        const favoritesBtn = document.getElementById('favorites-btn');
+        const favoritesPanel = document.getElementById('favorites-panel');
+        const favoritesList = document.getElementById('favorites-list');
+
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        
+        // --- Settings Elements ---
+        const importMoreBtn = document.getElementById('import-more-btn');
+        const exportAllBtn = document.getElementById('export-all-btn');
+        const exportFavBtn = document.getElementById('export-fav-btn');
+        const bgColorPicker = document.getElementById('bg-color-picker');
+        const colorPresets = document.querySelector('.color-presets');
+        const bgImageContainer = document.getElementById('bg-image-container');
+        const bgImageInput = document.getElementById('bg-image-input');
+        const bgImageUploadBtn = document.getElementById('bg-image-upload-btn');
+        const bgImageRemoveBtn = document.getElementById('bg-image-remove-btn');
+        const bgOpacitySlider = document.getElementById('bg-opacity-slider');
+        const bgOpacityValue = document.getElementById('bg-opacity-value');
+        const fontFamilySelect = document.getElementById('font-family-select');
+        const fontSizeSlider = document.getElementById('font-size-slider');
+        const fontSizeValue = document.getElementById('font-size-value');
+
+        // --- Initial Setup ---
+        loadSettings();
+
+        // --- Event Listeners ---
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        importMoreBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        bgImageUploadBtn.addEventListener('click', () => bgImageInput.click());
+        bgImageInput.addEventListener('change', handleBgImageSelect);
+        bgImageRemoveBtn.addEventListener('click', removeBgImage);
+
+        menuBtn.addEventListener('click', () => togglePanel(navPanel));
+        favoritesBtn.addEventListener('click', () => togglePanel(favoritesPanel));
+        settingsBtn.addEventListener('click', () => togglePanel(settingsPanel));
+        overlay.addEventListener('click', closeAllPanels);
+
+        exportAllBtn.addEventListener('click', exportAllTheatres);
+        exportFavBtn.addEventListener('click', exportFavoriteTheatres);
+
+        // --- Settings Listeners ---
+        colorPresets.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const theme = JSON.parse(e.target.dataset.theme);
+                applyTheme(theme);
+                saveSettings();
+            }
+        });
+        bgColorPicker.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--bg-color', e.target.value);
+            const textColor = getContrastColor(e.target.value);
+            document.documentElement.style.setProperty('--text-color', textColor);
+            document.documentElement.style.setProperty('--title-color', textColor);
+            saveSettings();
+        });
+        bgOpacitySlider.addEventListener('input', (e) => {
+            const opacity = e.target.value;
+            bgImageContainer.style.opacity = opacity;
+            bgOpacityValue.textContent = `${Math.round(opacity * 100)}%`;
+            saveSettings();
+        });
+        fontFamilySelect.addEventListener('change', (e) => {
+            document.documentElement.style.setProperty('--font-family', e.target.value);
+            saveSettings();
+        });
+        fontSizeSlider.addEventListener('input', (e) => {
+            const size = e.target.value;
+            document.documentElement.style.setProperty('--font-size', `${size}px`);
+            fontSizeValue.textContent = `${size}px`;
+            saveSettings();
+        });
+
+        // --- Core Functions ---
+        async function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            uploadFeedback.innerHTML = ''; // Clear previous feedback
+            const errorMessages = [];
+            const newFilesData = [];
+
+            const filePromises = Array.from(files).map(file => {
+                return new Promise(resolve => {
+                    if (!file.name.endsWith('.json')) {
+                        errorMessages.push(`<b>${file.name}</b>: 已跳过，文件不是 .json 格式。`);
+                        resolve();
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const parsedData = JSON.parse(e.target.result);
+                            let theatres = [];
+
+                            if (Array.isArray(parsedData)) {
+                                theatres = parsedData;
+                            } else if (typeof parsedData === 'object' && parsedData !== null) {
+                                for (const key in parsedData) {
+                                    if (Array.isArray(parsedData[key])) {
+                                        theatres = parsedData[key];
+                                        break; 
+                                    }
+                                }
+                            }
+
+                            if (theatres.length > 0 && typeof theatres[0].title !== 'undefined' && typeof theatres[0].content !== 'undefined') {
+                                newFilesData.push({ fileName: file.name, theatres: theatres });
+                            } else {
+                                throw new Error('内容格式不符，需要一个包含 "title" 和 "content" 键的对象的数组。');
+                            }
+                        } catch (error) {
+                            errorMessages.push(`<b>${file.name}</b>: 解析失败 - ${error.message}`);
+                        } finally {
+                            resolve();
+                        }
+                    };
+                    reader.onerror = () => {
+                        errorMessages.push(`<b>${file.name}</b>: 文件读取错误。`);
+                        resolve();
+                    };
+                    reader.readAsText(file);
+                });
+            });
+
+            await Promise.all(filePromises);
+
+            if (errorMessages.length > 0) {
+                uploadFeedback.innerHTML = errorMessages.join('<br>');
+            }
+
+            if (newFilesData.length > 0) {
+                allFilesData.push(...newFilesData);
+                buildUI();
+                uploadScreen.style.display = 'none';
+                mainContent.style.display = 'block';
+            }
+            
+            fileInput.value = ''; // Reset input to allow re-uploading the same file
+        }
+
+        function buildUI() {
+            viewer.innerHTML = '';
+            tocList.innerHTML = '';
+            
+            allFilesData.forEach(fileData => {
+                const fileTitle = document.createElement('h1');
+                fileTitle.className = 'file-title-in-content';
+                fileTitle.textContent = fileData.fileName;
+                viewer.appendChild(fileTitle);
+
+                const tocFileHeader = document.createElement('li');
+                tocFileHeader.className = 'file-header';
+                tocFileHeader.textContent = fileData.fileName;
+                tocList.appendChild(tocFileHeader);
+
+                fileData.theatres.forEach((theatre, index) => {
+                    const theatreId = `${fileData.fileName}-${index}`;
+                    const isFavorite = favoriteIds.has(theatreId);
+                    const item = document.createElement('article');
+                    item.className = 'theatre-item';
+                    item.id = theatreId;
+                    item.innerHTML = `
+                        <div class="theatre-title-container">
+                            <button class="favorite-btn ${isFavorite ? 'is-favorite' : ''}" data-id="${theatreId}">★</button>
+                            <h2>【${theatre.title}】</h2>
+                        </div>
+                        <p>${theatre.content}</p>
+                    `;
+                    viewer.appendChild(item);
+
+                    const tocItem = document.createElement('li');
+                    const tocLink = document.createElement('a');
+                    tocLink.href = `#${theatreId}`;
+                    tocLink.textContent = theatre.title;
+                    tocLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.getElementById(theatreId).scrollIntoView({ behavior: 'smooth' });
+                        closeAllPanels();
+                    });
+                    tocItem.appendChild(tocLink);
+                    tocList.appendChild(tocItem);
+                });
+            });
+
+            viewer.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', () => toggleFavorite(btn.dataset.id, btn));
+            });
+
+            buildFavoritesPanel();
+        }
+
+        function buildFavoritesPanel() {
+            favoritesList.innerHTML = '';
+            let favoriteCount = 0;
+
+            allFilesData.forEach(fileData => {
+                fileData.theatres.forEach((theatre, index) => {
+                    const theatreId = `${fileData.fileName}-${index}`;
+                    if (favoriteIds.has(theatreId)) {
+                        favoriteCount++;
+                        const favItem = document.createElement('li');
+                        const favLink = document.createElement('a');
+                        favLink.href = `#${theatreId}`;
+                        favLink.textContent = `[${fileData.fileName.substring(0,10)}...] ${theatre.title}`;
+                        favLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            document.getElementById(theatreId).scrollIntoView({ behavior: 'smooth' });
+                            closeAllPanels();
+                        });
+                        favItem.appendChild(favLink);
+                        favoritesList.appendChild(favItem);
+                    }
+                });
+            });
+            
+            favoritesBtn.classList.toggle('favorite-active', favoriteCount > 0);
+            if (favoriteCount === 0) {
+                 favoritesList.innerHTML = '<li style="padding: 20px; color: #888;">暂无收藏</li>';
+            }
+        }
+
+        function toggleFavorite(theatreId, btnElement) {
+            if (favoriteIds.has(theatreId)) {
+                favoriteIds.delete(theatreId);
+                btnElement.classList.remove('is-favorite');
+            } else {
+                favoriteIds.add(theatreId);
+                btnElement.classList.add('is-favorite');
+            }
+            localStorage.setItem('theatreReaderFavorites', JSON.stringify(Array.from(favoriteIds)));
+            buildFavoritesPanel();
+        }
+
+        // --- Panel Toggling ---
+        function togglePanel(panel) {
+            const isOpen = panel.classList.contains('open');
+            closeAllPanels();
+            if (!isOpen) {
+                panel.classList.add('open');
+                overlay.classList.add('active');
+            }
+        }
+        function closeAllPanels() {
+            document.querySelectorAll('.side-panel.open').forEach(p => p.classList.remove('open'));
+            overlay.classList.remove('active');
+        }
+
+        // --- Background Image ---
+        function handleBgImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageUrl = e.target.result;
+                bgImageContainer.style.backgroundImage = `url(${imageUrl})`;
+                localStorage.setItem('theatreReaderBgImage', imageUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+        function removeBgImage() {
+            bgImageContainer.style.backgroundImage = 'none';
+            localStorage.removeItem('theatreReaderBgImage');
+        }
+
+        // --- Settings & Theming ---
+        /**
+         * [FIXED] Applies a theme object to the document's CSS variables.
+         * Correctly maps short keys (bg, text) to full variable names (--bg-color, --text-color).
+         */
+        function applyTheme(theme) {
+            const themeMap = {
+                bg: '--bg-color',
+                text: '--text-color',
+                title: '--title-color',
+                sidebar: '--sidebar-bg'
+            };
+            for (const key in theme) {
+                if (themeMap[key]) {
+                    document.documentElement.style.setProperty(themeMap[key], theme[key]);
+                }
+            }
+            // Sync the color picker with the selected theme's background
+            const hexBgColor = theme.bg.startsWith('#') ? theme.bg : '#ffffff'; // Fallback for rgba
+            bgColorPicker.value = hexBgColor;
+        }
+
+        function saveSettings() {
+            const settings = {
+                theme: {
+                    bg: document.documentElement.style.getPropertyValue('--bg-color').trim(),
+                    text: document.documentElement.style.getPropertyValue('--text-color').trim(),
+                    title: document.documentElement.style.getPropertyValue('--title-color').trim(),
+                    sidebar: document.documentElement.style.getPropertyValue('--sidebar-bg').trim(),
+                },
+                fontFamily: fontFamilySelect.value,
+                fontSize: fontSizeSlider.value,
+                bgOpacity: bgOpacitySlider.value
+            };
+            localStorage.setItem('theatreReaderSettings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const savedFavorites = localStorage.getItem('theatreReaderFavorites');
+            if (savedFavorites) {
+                favoriteIds = new Set(JSON.parse(savedFavorites));
+            }
+
+            const savedBgImage = localStorage.getItem('theatreReaderBgImage');
+            if (savedBgImage) {
+                bgImageContainer.style.backgroundImage = `url(${savedBgImage})`;
+            }
+
+            const savedSettings = localStorage.getItem('theatreReaderSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (settings.theme) applyTheme(settings.theme);
+                
+                fontFamilySelect.value = settings.fontFamily;
+                fontSizeSlider.value = settings.fontSize;
+                bgOpacitySlider.value = settings.bgOpacity || 1;
+                
+                document.documentElement.style.setProperty('--font-family', settings.fontFamily);
+                document.documentElement.style.setProperty('--font-size', `${settings.fontSize}px`);
+                bgImageContainer.style.opacity = settings.bgOpacity || 1;
+
+                fontSizeValue.textContent = `${settings.fontSize}px`;
+                bgOpacityValue.textContent = `${Math.round((settings.bgOpacity || 1) * 100)}%`;
+            }
+        }
+        
+        // --- Export ---
+        function exportAllTheatres() {
+            if (allFilesData.length === 0) return alert('没有可导出的内容。');
+            const allTheatres = allFilesData.flatMap(file => file.theatres);
+            triggerDownload(JSON.stringify(allTheatres, null, 2), 'application/json', 'all_theatres.json');
+        }
+
+        function exportFavoriteTheatres() {
+            const favoriteTheatres = [];
+             allFilesData.forEach(fileData => {
+                fileData.theatres.forEach((theatre, index) => {
+                    const theatreId = `${fileData.fileName}-${index}`;
+                    if (favoriteIds.has(theatreId)) {
+                        favoriteTheatres.push(theatre);
+                    }
+                });
+            });
+            if (favoriteTheatres.length === 0) return alert('没有收藏可导出。');
+            triggerDownload(JSON.stringify(favoriteTheatres, null, 2), 'application/json', 'favorite_theatres.json');
+        }
+
+        function triggerDownload(content, mimeType, filename) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Helpers ---
+        function getContrastColor(hexcolor) {
+            if (!hexcolor) return '#333333';
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? '#333333' : '#ffffff';
+        }
+    });
+    </script>
+</body>
+</html>
