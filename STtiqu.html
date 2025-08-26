@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silly Tavern 多格式内容提取器</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --primary-color: #4a90e2;
+            --secondary-color: #6c757d;
+            --success-color: #50bda1;
+            --info-color: #f5a623;
+            --puppy-color: #007bff;
+            --content-color: #28a745;
+            --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        header h1 { margin: 0; font-size: 1.8rem; color: var(--primary-color); }
+        header p { margin: 5px 0 0; color: #666; font-size: 0.95rem; }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .upload-area.dragover { border-color: var(--primary-color); background-color: #f8f9fa; }
+        .upload-area p { margin: 0; font-size: 1.1rem; color: #555; }
+        .upload-area span { color: var(--primary-color); font-weight: bold; }
+
+        #file-name { text-align: center; margin-top: -15px; font-style: italic; color: var(--secondary-color); min-height: 1.2em; }
+
+        #help-section {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        #help-section summary {
+            padding: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+        #help-section div {
+            padding: 0 20px 20px 20px;
+            line-height: 1.6;
+        }
+        #help-section code {
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #help-section pre {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .format-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .format-section .format-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .format-section textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .format-section button {
+            align-self: flex-end;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        #puppy-format-container .format-label { color: var(--puppy-color); }
+        #content-format-container .format-label { color: var(--content-color); }
+
+        .controls { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+
+        .btn {
+            padding: 12px 25px; font-size: 1rem; font-weight: 600; border: none;
+            border-radius: 6px; cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: #357ABD; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover:not(:disabled) { background-color: #46a990; }
+        .btn-info { background-color: var(--info-color); color: white; }
+        .btn-info:hover:not(:disabled) { background-color: #d9901e; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-secondary:hover:not(:disabled) { background-color: #5a6268; }
+
+        #result-display {
+            width: 100%; max-height: 500px; padding: 15px; border: 1px solid var(--border-color);
+            border-radius: 8px; overflow-y: auto; background-color: #fdfdfd; box-sizing: border-box;
+        }
+        .result-item { margin-bottom: 15px; border: 1px solid #e9ecef; border-radius: 6px; overflow: hidden; }
+        .result-item:last-child { margin-bottom: 0; }
+        .result-item details { padding: 15px; }
+        .result-item summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        .result-content { margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); white-space: pre-wrap; line-height: 1.7; font-family: 'Georgia', serif; }
+
+        .badge {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+            border-radius: 4px;
+        }
+        .badge-puppy { background-color: var(--puppy-color); }
+        .badge-content { background-color: var(--content-color); }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Silly Tavern 多格式内容提取器</h1>
+            <p>上传聊天记录，勾选并定制格式，选择性提取“小剧场”与“正文”。</p>
+        </header>
+
+        <div id="upload-area" class="upload-area">
+            <p>拖拽 <span>.jsonl</span> 文件到这里，或<span>点击选择</span></p>
+        </div>
+        <p id="file-name"></p>
+        <input type="file" id="file-input" accept=".jsonl,application/jsonl" class="hidden">
+        
+        <details id="help-section">
+            <summary>如何创建自己的提取格式？(点击展开)</summary>
+            <div>
+                <p>本工具通过将你的“格式模板”转换为强大的“正则表达式”来工作。你只需告诉它“固定结构”是什么，“动态内容”在哪里。</p>
+                <h4>三步创建法：</h4>
+                <ol>
+                    <li><strong>找到一个真实例子</strong>：从你的聊天记录里，复制一段你想要提取的、完整的消息内容。</li>
+                    <li><strong>识别固定与变化部分</strong>：查看例子，哪些文字是每次都一样的（固定结构），哪些是你想提取的数据（变化内容）。</li>
+                    <li><strong>用占位符替换</strong>：将“变化内容”替换为 <code>{{content}}</code> 通配符，如果内容中有标题，则将标题部分替换为 <code>{{title}}</code>。</li>
+                </ol>
+                <h4>实战演练：</h4>
+                <p>假设你的AI被要求用 <code>&lt;content&gt;...&lt;/content&gt;</code> 包裹正文，它可能会生成：</p>
+                <pre>&lt;content&gt;
+这是正文的第一段。
+这是第二段。
+&lt;/content&gt;</pre>
+                <p>分析可知，<code>&lt;content&gt;</code>、它后面的换行、以及最后的<code>&lt;/content&gt;</code>是固定结构。中间的所有文字是你想提取的内容。因此，你的模板就是：</p>
+                <pre>&lt;content&gt;
+{{content}}
+&lt;/content&gt;</pre>
+                <p>把它粘贴到下面的“正文提取格式”框里即可！</p>
+            </div>
+        </details>
+
+        <div id="puppy-format-container" class="format-section">
+            <label class="format-label" for="puppy-format-template">
+                <input type="checkbox" id="enable-puppy" checked>
+                <span>小剧场提取格式 (须含 {{title}} 和 {{content}})</span>
+            </label>
+            <textarea id="puppy-format-template" spellcheck="false"></textarea>
+            <button id="restore-puppy-btn" class="btn btn-secondary">恢复默认</button>
+        </div>
+        
+        <div id="content-format-container" class="format-section">
+            <label class="format-label" for="content-format-template">
+                <input type="checkbox" id="enable-content" checked>
+                <span>正文提取格式 (须含 {{content}})</span>
+            </label>
+            <textarea id="content-format-template" spellcheck="false"></textarea>
+            <button id="restore-content-btn" class="btn btn-secondary">恢复默认</button>
+        </div>
+
+        <div class="controls">
+            <button id="extract-btn" class="btn btn-primary" disabled>开始提取</button>
+            <button id="download-txt-btn" class="btn btn-success" disabled>下载 .txt</button>
+            <button id="download-json-btn" class="btn btn-info" disabled>下载 .json</button>
+            <button id="clear-btn" class="btn btn-secondary">清空全部</button>
+        </div>
+
+        <div id="result-display" aria-live="polite">
+             <p style="color: #888; text-align: center; margin-top: 20px;">提取的内容将按原文顺序显示在这里...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+            const fileNameDisplay = document.getElementById('file-name');
+            const extractBtn = document.getElementById('extract-btn');
+            const downloadTxtBtn = document.getElementById('download-txt-btn');
+            const downloadJsonBtn = document.getElementById('download-json-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const resultDisplay = document.getElementById('result-display');
+            
+            const enablePuppy = document.getElementById('enable-puppy');
+            const puppyFormatTemplate = document.getElementById('puppy-format-template');
+            const restorePuppyBtn = document.getElementById('restore-puppy-btn');
+            
+            const enableContent = document.getElementById('enable-content');
+            const contentFormatTemplate = document.getElementById('content-format-template');
+            const restoreContentBtn = document.getElementById('restore-content-btn');
+
+            const defaultPuppyTemplate = `<puppy>\n<details>\n<summary>\n【小剧场 · {{title}}】\n</summary>\n\n{{content}}\n\n</details>\n</puppy>`;
+            const defaultContentTemplate = `<content>\n{{content}}\n</content>`;
+            
+            puppyFormatTemplate.value = defaultPuppyTemplate.trim();
+            contentFormatTemplate.value = defaultContentTemplate.trim();
+
+            // --- State Variables ---
+            let uploadedFile = null;
+            let rawFileContent = null;
+            let extractedData = [];
+
+            // --- Event Listeners ---
+            uploadArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover')));
+            ['dragleave', 'drop'].forEach(eventName => uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover')));
+            uploadArea.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
+
+            extractBtn.addEventListener('click', processExtraction);
+            downloadTxtBtn.addEventListener('click', downloadResultAsTxt);
+            downloadJsonBtn.addEventListener('click', downloadResultAsJson);
+            clearBtn.addEventListener('click', resetAll);
+            restorePuppyBtn.addEventListener('click', () => { puppyFormatTemplate.value = defaultPuppyTemplate.trim(); });
+            restoreContentBtn.addEventListener('click', () => { contentFormatTemplate.value = defaultContentTemplate.trim(); });
+
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+            function handleFile(file) {
+                if (file && file.name.endsWith('.jsonl')) {
+                    uploadedFile = file;
+                    fileNameDisplay.textContent = `已选择文件: ${file.name}`;
+                    extractBtn.disabled = false;
+                    const reader = new FileReader();
+                    reader.onload = (e) => { rawFileContent = e.target.result; };
+                    reader.readAsText(file);
+                } else {
+                    alert('请上传一个有效的 .jsonl 文件！');
+                }
+            }
+            
+            function resetAll() {
+                uploadedFile = null;
+                rawFileContent = null;
+                extractedData = [];
+                fileInput.value = '';
+                fileNameDisplay.textContent = '';
+                resultDisplay.innerHTML = '<p style="color: #888; text-align: center; margin-top: 20px;">提取的内容将按原文顺序显示在这里...</p>';
+                extractBtn.disabled = true;
+                downloadTxtBtn.disabled = true;
+                downloadJsonBtn.disabled = true;
+            }
+
+            // --- Download Functions ---
+            function downloadResultAsTxt() {
+                if (extractedData.length === 0) return;
+
+                const puppies = extractedData.filter(item => item.type === 'puppy');
+                const contents = extractedData.filter(item => item.type === 'content');
+                
+                let textContent = '';
+
+                if (puppies.length > 0) {
+                    textContent += `--- 小剧场 (共 ${puppies.length} 条) ---\n\n`;
+                    textContent += puppies.map(p => `【小剧场 · ${p.title}】\n\n${p.content}`).join('\n\n========================================\n\n');
+                }
+
+                if (contents.length > 0) {
+                    if (textContent.length > 0) textContent += '\n\n\n';
+                    textContent += `--- 正文内容 (共 ${contents.length} 条) ---\n\n`;
+                    textContent += contents.map(c => c.content).join('\n\n========================================\n\n');
+                }
+
+                triggerDownload(textContent, 'text/plain', '_extracted.txt');
+            }
+
+            function downloadResultAsJson() {
+                if (extractedData.length === 0) return;
+                const jsonContent = JSON.stringify(extractedData, null, 2);
+                triggerDownload(jsonContent, 'application/json', '_extracted.json');
+            }
+
+            function triggerDownload(content, mimeType, extension) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const baseName = uploadedFile.name.replace(/\.jsonl$/i, '');
+                a.download = `${baseName}${extension}`;
+                a.href = url;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // --- Core Logic ---
+            function escapeRegex(str) {
+                return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            function createRegexFromTemplate(template, type) {
+                const hasTitle = template.includes('{{title}}');
+                const hasContent = template.includes('{{content}}');
+
+                if (!hasContent) {
+                    alert(`"${type}" 格式模板必须包含 {{content}} 占位符！`);
+                    return null;
+                }
+                if (type === '小剧场' && !hasTitle) {
+                    alert(`"小剧场" 格式模板必须包含 {{title}} 占位符！`);
+                    return null;
+                }
+
+                const titleIndex = hasTitle ? template.indexOf('{{title}}') : -1;
+                const contentIndex = template.indexOf('{{content}}');
+                let escapedTemplate = escapeRegex(template);
+                
+                let regexString = escapedTemplate.replace(escapeRegex('{{content}}'), '([\\s\\S]*?)');
+                if (hasTitle) {
+                    regexString = regexString.replace(escapeRegex('{{title}}'), '(.*?)');
+                }
+                
+                regexString = regexString.replace(/\s+/g, '\\s*');
+
+                return {
+                    regex: new RegExp(regexString, 'g'),
+                    hasTitle: hasTitle,
+                    titleGroup: hasTitle ? (titleIndex < contentIndex ? 1 : 2) : null,
+                    contentGroup: hasTitle ? (contentIndex < titleIndex ? 1 : 2) : 1
+                };
+            }
+
+            function processExtraction() {
+                if (!rawFileContent) {
+                    alert('文件内容为空或读取失败！');
+                    return;
+                }
+                
+                if (!enablePuppy.checked && !enableContent.checked) {
+                    alert('请至少启用一种提取格式！');
+                    return;
+                }
+
+                let puppyExtractor = null;
+                if (enablePuppy.checked) {
+                    puppyExtractor = createRegexFromTemplate(puppyFormatTemplate.value, '小剧场');
+                    if (!puppyExtractor) return; // Stop if template is invalid
+                }
+
+                let contentExtractor = null;
+                if (enableContent.checked) {
+                    contentExtractor = createRegexFromTemplate(contentFormatTemplate.value, '正文');
+                    if (!contentExtractor) return; // Stop if template is invalid
+                }
+
+                extractedData = [];
+                const lines = rawFileContent.split('\n');
+
+                lines.forEach((line, index) => {
+                    if (line.trim() === '') return;
+                    try {
+                        const entry = JSON.parse(line);
+                        const messageContent = entry.mes || (entry.swipes?.[0]);
+                        
+                        if (typeof messageContent === 'string') {
+                           let match;
+                           
+                           if (puppyExtractor) {
+                               puppyExtractor.regex.lastIndex = 0;
+                               while ((match = puppyExtractor.regex.exec(messageContent)) !== null) {
+                                   extractedData.push({
+                                       type: 'puppy',
+                                       title: match[puppyExtractor.titleGroup].trim(),
+                                       content: match[puppyExtractor.contentGroup].trim(),
+                                       sourceLine: index + 1
+                                   });
+                               }
+                           }
+                           
+                           if (contentExtractor) {
+                               contentExtractor.regex.lastIndex = 0;
+                               while ((match = contentExtractor.regex.exec(messageContent)) !== null) {
+                                   extractedData.push({
+                                       type: 'content',
+                                       title: `正文内容`,
+                                       content: match[contentExtractor.contentGroup].trim(),
+                                       sourceLine: index + 1
+                                   });
+                               }
+                           }
+                        }
+                    } catch (error) {
+                        console.warn(`无法解析第 ${index + 1} 行的JSON:`, error);
+                    }
+                });
+                
+                extractedData.sort((a, b) => a.sourceLine - b.sourceLine);
+                
+                renderResults();
+            }
+
+            function renderResults() {
+                resultDisplay.innerHTML = '';
+                if (extractedData.length === 0) {
+                    resultDisplay.innerHTML = '<p style="color: #888; text-align: center; margin-top: 20px;">提取完成，但未在文件中找到符合任何已启用格式的内容。</p>';
+                    downloadTxtBtn.disabled = true;
+                    downloadJsonBtn.disabled = true;
+                    return;
+                }
+
+                extractedData.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'result-item';
+                    
+                    let summaryHtml = '';
+                    if (item.type === 'puppy') {
+                        summaryHtml = `<span class="badge badge-puppy">剧场</span> <span>【小剧场 · ${item.title}】</span>`;
+                    } else if (item.type === 'content') {
+                        summaryHtml = `<span class="badge badge-content">正文</span> <span>【正文内容 - 来自第 ${item.sourceLine} 行】</span>`;
+                    }
+
+                    itemDiv.innerHTML = `
+                        <details open>
+                            <summary>${summaryHtml}</summary>
+                            <div class="result-content">${item.content}</div>
+                        </details>
+                    `;
+                    resultDisplay.appendChild(itemDiv);
+                });
+                
+                downloadTxtBtn.disabled = false;
+                downloadJsonBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
