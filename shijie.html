@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>弥·世界</title>
+    
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    
+    <!-- =================================================================
+    // 1. CSS 样式 (Style)
+    // [新功能] 为时间线事件的按钮组增加间距
+    // ================================================================= -->
+    <style>
+        /* --- 主题与变量定义 --- */
+        :root {
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            --font-title: 'Georgia', 'Times New Roman', Times, serif;
+            --transition-speed: 0.3s;
+            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+            --border-radius: 12px;
+        }
+
+        /* 默认: 梦幻暗色主题 */
+        html.dark-theme {
+            --bg-color: #1a1a2e;
+            --bg-gradient: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            --primary-color: #e94560;
+            --secondary-color: #0f3460;
+            --text-color: #e0e0e0;
+            --text-muted-color: #a0a0c0;
+            --card-bg-color: rgba(23, 23, 43, 0.85);
+            --border-color: rgba(145, 145, 220, 0.3);
+            --input-bg: #0f3460;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+        }
+
+        /* 简约亮色主题 */
+        html.light-theme {
+            --bg-color: #f4f7fc;
+            --bg-gradient: linear-gradient(180deg, #f4f7fc 0%, #e9ecef 100%);
+            --primary-color: #0056b3;
+            --secondary-color: #e9ecef;
+            --text-color: #212529;
+            --text-muted-color: #6c757d;
+            --card-bg-color: rgba(255, 255, 255, 0.9);
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+
+        /* 羊皮纸怀旧主题 */
+        html.nostalgia-theme {
+            --bg-color: #f5e8c7;
+            --bg-gradient: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d3c4a2' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"), linear-gradient(180deg, #f5e8c7 0%, #e3d5b4 100%);
+            --primary-color: #8a6d3b;
+            --secondary-color: #d3c4a2;
+            --text-color: #5a4628;
+            --text-muted-color: #7a6648;
+            --card-bg-color: rgba(252, 248, 237, 0.85);
+            --border-color: #c8b694;
+            --input-bg: #fcf8ed;
+            --font-title: 'Garamond', 'Times New Roman', serif;
+            --success-color: #5f8d4e;
+            --danger-color: #a44a3f;
+        }
+
+        /* 生巧慕斯主题 */
+        html.mousse-theme {
+            --bg-color: #F4DCBA;
+            --bg-gradient: linear-gradient(180deg, #F4DCBA 0%, #f7e9d7 100%);
+            --primary-color: #8D5022;
+            --secondary-color: #B5C193;
+            --text-color: #5D4037;
+            --text-muted-color: #DBAC85;
+            --card-bg-color: rgba(255, 255, 255, 0.7);
+            --border-color: #DBAC85;
+            --input-bg: #FFFFFF;
+            --success-color: #5f8d4e;
+            --danger-color: #c62828;
+        }
+
+        /* 橙子奶霜主题 */
+        html.cream-theme {
+            --bg-color: #FAE39E;
+            --bg-gradient: linear-gradient(180deg, #FAE39E 0%, #fff8e1 100%);
+            --primary-color: #FC9F66;
+            --secondary-color: #B8E0E2;
+            --text-color: #6d4c41;
+            --text-muted-color: #a1887f;
+            --card-bg-color: rgba(255, 255, 255, 0.8);
+            --border-color: #FAC356;
+            --input-bg: #ffffff;
+            --success-color: #66bb6a;
+            --danger-color: #ef5350;
+        }
+
+        /* 橘子海主题 */
+        html.orange-sea-theme {
+            --bg-color: #f2ddb6;
+            --bg-gradient: linear-gradient(180deg, #f2ddb6 0%, #fff3e0 100%);
+            --primary-color: #f2913d;
+            --secondary-color: #a6351c;
+            --text-color: #401607;
+            --text-muted-color: #8d6e63;
+            --card-bg-color: rgba(255, 250, 240, 0.85);
+            --border-color: #ffcc80;
+            --input-bg: #fff8f0;
+            --success-color: #4caf50;
+            --danger-color: #d9534f;
+        }
+
+        /* 潮流酷炫主题 */
+        html.trendy-theme {
+            --bg-color: #2F387D;
+            --bg-gradient: linear-gradient(180deg, #2F387D 0%, #1A237E 100%);
+            --primary-color: #36F8D5;
+            --secondary-color: #FC8127;
+            --text-color: #f0f0f0;
+            --text-muted-color: #DC9BF7;
+            --card-bg-color: rgba(47, 56, 125, 0.6);
+            --border-color: rgba(54, 248, 213, 0.4);
+            --input-bg: #39438f;
+            --font-main: 'Courier New', Courier, monospace;
+            --success-color: #00ff00;
+            --danger-color: #ff3333;
+        }
+
+        /* 演唱会视觉主题 */
+        html.concert-theme {
+            --bg-color: #77341e;
+            --bg-gradient: linear-gradient(180deg, #77341e 0%, #5d4037 100%);
+            --primary-color: #0391d3;
+            --secondary-color: #ee5624;
+            --text-color: #fdf6e3;
+            --text-muted-color: #ecc35f;
+            --card-bg-color: rgba(50, 25, 15, 0.75);
+            --border-color: rgba(238, 86, 36, 0.5);
+            --input-bg: #8d5b4c;
+            --success-color: #8bc34a;
+            --danger-color: #f4511e;
+        }
+        
+        html.custom-theme {}
+
+        /* --- 基础样式 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient);
+            color: var(--text-color);
+            transition: background var(--transition-speed), color var(--transition-speed);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        h1, h2, h3, h4 { font-family: var(--font-title); color: var(--primary-color); }
+        button, select, input, textarea {
+            font-family: inherit; color: var(--text-color); background-color: var(--input-bg);
+            border: 1px solid var(--border-color); border-radius: 8px; padding: 0.8rem 1rem;
+            transition: all var(--transition-speed);
+        }
+        button { cursor: pointer; }
+        button:hover { filter: brightness(1.2); }
+        .btn-primary { background-color: var(--primary-color); color: var(--bg-color); border-color: var(--primary-color); font-weight: bold; }
+        html.dark-theme .btn-primary, html.trendy-theme .btn-primary, html.concert-theme .btn-primary, html.custom-theme .btn-primary { color: white; }
+        .btn-secondary { background-color: var(--secondary-color); color: var(--text-color); border-color: var(--border-color); }
+        html.dark-theme .btn-secondary, html.trendy-theme .btn-secondary, html.concert-theme .btn-secondary, html.custom-theme .btn-secondary { color: white; }
+        .btn-danger { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+        .btn-icon {
+            background: transparent; border: none; width: 36px; height: 36px;
+            border-radius: 50%; display: inline-flex; justify-content: center; align-items: center;
+            color: var(--text-muted-color); padding: 0;
+        }
+        .btn-icon svg { width: 20px; height: 20px; fill: currentColor; }
+        .btn-icon:hover { color: var(--primary-color); background: rgba(255, 255, 255, 0.1); }
+
+        /* --- 头部与导航 --- */
+        .site-header { text-align: center; padding: 3rem 0; animation: fadeInDown 0.8s ease; }
+        .site-title { font-size: 2.5rem; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+        .site-title svg { width: 32px; height: 32px; fill: var(--primary-color); }
+        .main-nav { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+        .main-nav button { background: none; border: none; font-size: 1.1rem; padding: 0.5rem 1.5rem; position: relative; }
+        .main-nav button::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 0; height: 3px; background-color: var(--primary-color); border-radius: 2px; transition: width var(--transition-speed) ease; }
+        .main-nav button.active, .main-nav button:hover { color: var(--primary-color); }
+        .main-nav button.active::after { width: 80%; }
+
+        /* --- 页面视图切换 --- */
+        .view { display: none; padding: 2rem 0; animation: fadeInUp 0.6s ease; }
+        .view.active { display: block; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 通用控制栏 --- */
+        .controls-bar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; background-color: var(--card-bg-color); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); }
+        .controls-bar select, .controls-bar input { flex-grow: 1; min-width: 150px; }
+        
+        /* --- 角色库视图 --- */
+        .character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .character-card {
+            background-color: var(--card-bg-color); border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow); transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+            position: relative; display: flex; flex-direction: column; min-height: 140px;
+            border: 1px solid var(--border-color);
+        }
+        .character-card:hover { transform: translateY(-5px); box-shadow: var(--card-shadow-hover); }
+        .card-body { display: flex; align-items: center; gap: 1rem; padding: 1rem; flex-grow: 1; cursor: pointer; }
+        .card-info { flex-grow: 1; }
+        .card-info h3 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+        .card-info p { color: var(--text-muted-color); font-size: 0.9rem; }
+        .card-avatar { width: 80px; height: 80px; object-fit: cover; border-radius: var(--border-radius); flex-shrink: 0; background-color: var(--secondary-color); border: 2px solid var(--border-color); }
+        .card-actions {
+            position: absolute; top: 8px; right: 8px; display: flex; gap: 6px;
+            opacity: 0; visibility: hidden; transition: opacity var(--transition-speed), visibility var(--transition-speed); z-index: 2;
+        }
+        .character-card:hover .card-actions { opacity: 1; visibility: visible; }
+        .add-card {
+            justify-content: center; align-items: center; border: 2px dashed var(--border-color);
+            cursor: pointer; color: var(--text-muted-color); padding: 1rem;
+        }
+        .add-card:hover { background: var(--secondary-color); color: var(--primary-color); border-color: var(--primary-color); border-style: solid; }
+        .add-card-icon { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .add-card-icon svg { width: 48px; height: 48px; }
+        
+        /* --- 空状态提示 --- */
+        .empty-state {
+            grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; 
+            background: var(--card-bg-color); border-radius: var(--border-radius);
+            border: 2px dashed var(--border-color); color: var(--text-muted-color);
+        }
+        .empty-state h3 { color: var(--text-color); }
+        
+        /* --- 世界观视图 --- */
+        .content-list { display: flex; flex-direction: column; gap: 1.5rem; }
+        .content-item { background: var(--card-bg-color); border-radius: var(--border-radius); box-shadow: var(--card-shadow); position: relative; border: 1px solid var(--border-color); overflow: hidden; }
+        .content-item summary { padding: 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; list-style: none; /* Hide arrow */ }
+        .content-item summary::-webkit-details-marker { display: none; }
+        .content-item summary h3 { margin: 0; }
+        .content-item[open] summary { border-bottom: 1px solid var(--border-color); }
+        .content-body { padding: 1.5rem; }
+        .timeline { list-style: none; padding: 1.5rem 0 1rem 20px; border-left: 3px solid var(--border-color); }
+        .timeline-item { position: relative; margin-bottom: 2rem; padding-left: 45px; }
+        .timeline-item::before { content: ''; position: absolute; left: -28px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--secondary-color); border: 4px solid var(--primary-color); z-index: 1; transition: transform var(--transition-speed); }
+        .timeline-item:hover::before { transform: scale(1.2); }
+        .timeline-year { font-weight: bold; color: var(--primary-color); margin-bottom: 0.25rem; }
+        .add-timeline-form { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; align-items: stretch; }
+        .add-content-btn { width: 100%; margin-top: 1.5rem; padding: 1.5rem; border-style: dashed; }
+        /* [新功能] 时间线事件的按钮组样式 */
+        .timeline-item-actions {
+            position: absolute; right: 0; top: 0;
+            display: flex; gap: 6px;
+        }
+
+        /* --- 故事集视图优化 --- */
+        .story-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+        .story-card {
+            background: var(--card-bg-color); border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow); border: 1px solid var(--border-color);
+            display: flex; flex-direction: row; overflow: hidden;
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        .story-card:hover { transform: translateY(-5px); box-shadow: var(--card-shadow-hover); }
+        .story-thumbnail {
+            flex-shrink: 0; width: 200px; height: 100%; min-height: 220px;
+            object-fit: cover; background-color: var(--secondary-color);
+        }
+        .story-card-content { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .story-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+        .story-card-header h3 { font-size: 1.5rem; margin: 0; flex-grow: 1; }
+        .story-worldview-tag {
+            font-size: 0.8rem; font-weight: bold; padding: 0.2rem 0.6rem;
+            background-color: var(--primary-color); color: var(--bg-color);
+            border-radius: 6px; white-space: nowrap;
+        }
+        html.dark-theme .story-worldview-tag, html.trendy-theme .story-worldview-tag, html.concert-theme .story-worldview-tag, html.custom-theme .story-worldview-tag { color: white; }
+        .story-actors { display: flex; margin-bottom: 1rem; }
+        .story-actors img { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--card-bg-color); margin-left: -12px; }
+        .story-actors img:first-child { margin-left: 0; }
+        .story-content p { margin-bottom: 1rem; color: var(--text-muted-color); }
+        .read-more-btn { color: var(--primary-color); cursor: pointer; font-weight: bold; display: inline-block; background: none; border: none; padding: 0; }
+        @media (max-width: 600px) {
+            .story-card { flex-direction: column; }
+            .story-thumbnail { width: 100%; height: 180px; }
+        }
+
+        /* --- 关系网视图样式 --- */
+        #relationship-nexus-container {
+            width: 100%;
+            height: 70vh; /* 视口高度的70% */
+            min-height: 500px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--card-bg-color);
+            position: relative;
+        }
+        .vis-network {
+             outline: none;
+        }
+
+        /* --- 弹窗 (Modal) --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content { background: var(--bg-color); border: 1px solid var(--border-color); width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; border-radius: var(--border-radius); padding: 2rem; position: relative; animation: zoomIn 0.4s ease; }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 2rem; color: var(--text-muted-color); cursor: pointer; line-height: 1; padding: 0.5rem; z-index: 10; }
+        .form-container h2 { text-align: center; margin-bottom: 2rem; font-size: 2rem; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        .avatar-upload-group { display: flex; align-items: center; gap: 1rem; }
+        .avatar-upload-group img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+        .relationship-item { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; }
+        .illustration-preview-wrapper { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+        .illustration-preview-wrapper img { max-width: 200px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 2px solid var(--border-color); align-self: flex-start; }
+        .illustration-preview-wrapper button { align-self: flex-start; }
+
+        /* --- 美化后的角色详情弹窗 --- */
+        .details-header { text-align: center; margin-bottom: 2rem; position: relative; }
+        .details-header img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-color); margin-bottom: 1rem; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .details-header h2 { font-size: 2.5rem; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; }
+        .details-section { margin-bottom: 1.5rem; }
+        .details-section h4 { font-size: 1.2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .details-info-list { list-style: none; padding: 0; }
+        .details-info-list li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color); }
+        .details-info-list li:last-child { border-bottom: none; }
+        .details-info-list strong { color: var(--text-color); }
+        .details-info-list span { color: var(--text-muted-color); }
+        .tag { background: var(--secondary-color); color: var(--text-color); padding: 0.3rem 0.8rem; border-radius: 15px; display: inline-block; margin: 0.2rem; font-size: 0.9rem; }
+        html.dark-theme .tag, html.trendy-theme .tag, html.concert-theme .tag, html.custom-theme .tag { color: white; }
+        .details-story p { margin-bottom: 1em; line-height: 1.7; }
+        .story-link { display: block; padding: 0.5rem 1rem; background: var(--input-bg); border-radius: 8px; margin-bottom: 0.5rem; text-decoration: none; color: var(--primary-color); border: 1px solid var(--border-color); transition: all var(--transition-speed); }
+        .story-link:hover { filter: brightness(1.2); border-color: var(--primary-color); }
+
+        /* --- Toast 通知 --- */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 1rem 1.5rem; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: toastIn 0.5s ease, toastOut 0.5s ease 2.5s forwards; }
+        .toast.success { background-color: var(--success-color); }
+        .toast.error { background-color: var(--danger-color); }
+        @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(120%); } }
+
+        /* --- 页脚 --- */
+        .site-footer { text-align: center; padding: 4rem 2rem 2rem 2rem; margin-top: 4rem; background: var(--card-bg-color); border-top: 1px solid var(--border-color); }
+        .footer-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .footer-group { display: flex; gap: 1rem; align-items: center; position: relative; }
+        
+        .theme-selector-dropdown {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            margin-bottom: 10px; background-color: var(--card-bg-color);
+            border: 1px solid var(--border-color); border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow); padding: 0.5rem;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+            width: 320px; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 10;
+        }
+        .theme-selector-dropdown.active { opacity: 1; visibility: visible; }
+        .theme-option-btn { text-align: left; background: transparent; border: none; padding: 0.5rem 1rem; border-radius: 6px; width: 100%; }
+        .theme-option-btn:hover { background-color: var(--secondary-color); color: var(--primary-color); }
+
+        .customizer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .color-picker-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--input-bg);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .color-picker-group label { flex-grow: 1; }
+        .color-picker-group input[type="color"] {
+            -webkit-appearance: none;
+            width: 44px;
+            height: 44px;
+            border: none;
+            padding: 0;
+            background: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .color-picker-group input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-picker-group input[type="color"]::-webkit-color-swatch { border: 2px solid var(--border-color); border-radius: 50%; }
+        .customizer-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+
+        /* --- 响应式设计 --- */
+        @media (max-width: 768px) {
+            .container { padding: 0 1rem; }
+            .form-grid, .details-grid { grid-template-columns: 1fr; }
+            .footer-controls { flex-direction: column; }
+            .details-header img { width: 120px; height: 120px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =================================================================
+    // 2. HTML 结构 (Structure)
+    // (无结构性变化)
+    // ================================================================= -->
+    <div class="container">
+        <header class="site-header">
+            <h1 class="site-title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z"/></svg>
+                <span>弥·世界</span>
+            </h1>
+            <nav class="main-nav" id="main-nav">
+                <button data-view="hub-view" class="active">角色库</button>
+                <button data-view="nexus-view">关系网</button>
+                <button data-view="worldview-view">世界观</button>
+                <button data-view="story-view">故事集</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- 角色库视图 -->
+            <section id="hub-view" class="view active">
+                <div class="controls-bar">
+                    <input type="text" id="search-input" placeholder="搜索角色名...">
+                    <select id="filter-gender"><option value="">所有性别</option><option value="女">女</option><option value="男">男</option><option value="未知">未知</option></select>
+                    <select id="filter-race"><option value="">所有种族</option></select>
+                    <select id="filter-worldview"><option value="">所有世界观</option></select>
+                </div>
+                <div id="character-grid" class="character-grid"></div>
+            </section>
+            
+            <section id="nexus-view" class="view">
+                 <div class="controls-bar">
+                    <select id="filter-nexus-worldview"><option value="">所有世界观</option></select>
+                </div>
+                <div id="relationship-nexus-container"></div>
+            </section>
+
+            <!-- 世界观/时间线视图 -->
+            <section id="worldview-view" class="view">
+                <div id="worldview-list" class="content-list"></div>
+                <button class="add-content-btn" data-action="open-worldview-editor">+ 添加新的世界观</button>
+            </section>
+
+            <!-- 故事集视图 -->
+            <section id="story-view" class="view">
+                <div class="controls-bar">
+                    <select id="filter-story-worldview"><option value="">所有世界观</option></select>
+                </div>
+                <div id="story-grid" class="story-grid"></div>
+                <button class="add-content-btn" data-action="open-story-editor">+ 撰写新的故事</button>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <div class="footer-controls">
+                <div class="footer-group">
+                    <button id="import-btn" class="btn-secondary">导入数据</button>
+                    <input type="file" id="import-file" style="display: none;" accept=".json">
+                    <button id="export-btn" class="btn-secondary">导出数据</button>
+                </div>
+                <div class="footer-group">
+                    <div id="theme-selector-dropdown" class="theme-selector-dropdown"></div>
+                    <button id="theme-switcher" class="btn-secondary" style="display:flex; align-items:center; gap: 0.5rem;" data-action="toggle-theme-menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width:20px; height:20px; fill:currentColor;"><path d="M448 256c0-106-86-192-192-192V448c106 0 192-86 192-192zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z"/></svg>
+                        <span id="theme-name-display">主题: 暗色</span>
+                    </button>
+                    <button id="customizer-btn" class="btn-secondary" data-action="open-customizer">自定义外观</button>
+                </div>
+                 <div class="footer-group">
+                    <input type="text" id="font-url-input" placeholder="粘贴Google Font URL" style="padding: 0.5rem; min-width: 200px;">
+                    <button id="apply-font-btn" class="btn-secondary" style="padding: 0.5rem;">应用字体</button>
+                </div>
+            </div>
+            <p style="margin-top: 1.5rem; color: var(--text-muted-color); font-size: 0.9rem;">弥·世界 &copy; 2024</p>
+        </footer>
+    </div>
+
+    <!-- 弹窗容器 -->
+    <div id="editor-modal-overlay" class="modal-overlay">
+        <div id="editor-modal-content" class="modal-content"></div>
+    </div>
+    <div id="details-modal-overlay" class="modal-overlay">
+         <div id="details-modal-content" class="modal-content"></div>
+    </div>
+    <div id="customizer-modal-overlay" class="modal-overlay">
+         <div id="customizer-modal-content" class="modal-content"></div>
+    </div>
+    
+    <!-- Toast通知容器 -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- SVG 图标定义 -->
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <symbol id="icon-add" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
+        <symbol id="icon-delete" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+      </defs>
+    </svg>
+
+    <!-- =================================================================
+    // 3. JAVASCRIPT 交互逻辑 (Logic)
+    // [新功能] 增加打开、保存时间线事件编辑器的函数
+    // [新功能] 在渲染和事件监听中加入处理逻辑
+    // ================================================================= -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        class IndexedDBManager {
+            constructor(dbName, version, storeName) { this.dbName = dbName; this.version = version; this.storeName = storeName; this.db = null; }
+            async openDB() { return new Promise((resolve, reject) => { if (this.db) { resolve(this.db); return; } const request = indexedDB.open(this.dbName, this.version); request.onerror = (event) => reject("数据库打开报错"); request.onsuccess = (event) => { this.db = event.target.result; resolve(this.db); }; request.onupgradeneeded = (event) => { const db = event.target.result; if (!db.objectStoreNames.contains(this.storeName)) { db.createObjectStore(this.storeName, { keyPath: 'id' }); } }; }); }
+            async saveData(data) { await this.openDB(); return new Promise((resolve, reject) => { const transaction = this.db.transaction([this.storeName], 'readwrite'); const store = transaction.objectStore(this.storeName); const request = store.put(data); request.onsuccess = () => resolve(); request.onerror = (event) => reject('数据写入失败: ' + event.target.error); }); }
+            async loadData(id) { await this.openDB(); return new Promise((resolve, reject) => { const transaction = this.db.transaction([this.storeName], 'readonly'); const store = transaction.objectStore(this.storeName); const request = store.get(id); request.onsuccess = () => resolve(request.result); request.onerror = (event) => reject('数据读取失败: ' + event.target.error); }); }
+        }
+
+        const idbManager = new IndexedDBManager('AI_Memorial_DB', 1, 'app_data');
+        const initialData = {
+            id: 'main_data',
+            characters: [
+                { id: 'char_1', name: '艾拉拉', avatar: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2U5NDU2MCIvPjwvc3ZnPg==', info: { '性别': '女', '种族': '月精灵', '年龄': '127', '身高': '168cm' }, personality: ['温柔', '聪慧', '略带忧郁', '好奇心强'], story: '诞生于永恒之森的艾拉拉，是族里百年一遇的星辰魔法天才。\n为了寻找改变某个悲剧未来的方法，她离开了故乡，踏上了未知的旅程。', linkedWorldviewIds: ['world_1'], relationships: [{ targetCharId: 'char_2', relation: '旅途中的伙伴' }] },
+                { id: 'char_2', name: '凯尔', avatar: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzBmMzQ2MCIvPjwvc3ZnPg==', info: { '性别': '男', '种族': '人类', '年龄': '24', '身高': '185cm' }, personality: ['果断', '冷漠', '内心挣扎', '信守承诺'], story: '凯尔曾是王国最年轻的圣骑士，但在一次讨伐深渊的任务中被诅咒。\n他追寻着解除诅咒的方法，同时也用自己的方式制裁着罪恶。', linkedWorldviewIds: ['world_1', 'world_2'], relationships: [{ targetCharId: 'char_1', relation: '复杂的守护关系' }] }
+            ],
+            worldview: [ { id: 'world_1', title: '星辰魔法体系', description: '一种通过观测星辰轨迹来施展的古老魔法，分为预言、守护和毁灭三个分支。', timeline: [{ id: `event_${Date.now()+1}`, year: '纪元1054年', event: '艾拉拉在永恒之森出生，被星辰祝福。' }] }, { id: 'world_2', title: '艾瑞多尔王国', description: '一个历史悠久的人类王国，曾经光明鼎盛，但近年来饱受边境的深渊侵蚀。', timeline: [] } ],
+            stories: [ { id: 'story_1', title: '初次相遇', illustration: null, worldviewId: 'world_1', content: '在迷雾笼罩的边境小镇，追寻星辰轨迹的艾拉拉，与被诅咒之力困扰的凯尔不期而遇。命运的齿轮开始转动...', linkedCharIds: ['char_1', 'char_2'] } ]
+        };
+        let db = {};
+        const PLACEHOLDER_IMG_URL = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNMCA1MEExIDEgMCAwIDAgMTAwIDUwQTEgMSAwIDAgMCAwIDUwWiIgZmlsbD0iI2RkZCIvPjwvc3ZnPg==';
+        const STORY_PREVIEW_LENGTH = 120;
+        let network = null;
+
+        const mainNav = document.getElementById('main-nav');
+        const views = document.querySelectorAll('.view');
+        const characterGrid = document.getElementById('character-grid');
+        const searchInput = document.getElementById('search-input');
+        const filterGender = document.getElementById('filter-gender');
+        const filterRace = document.getElementById('filter-race');
+        const filterWorldview = document.getElementById('filter-worldview');
+        const nexusContainer = document.getElementById('relationship-nexus-container');
+        const filterNexusWorldview = document.getElementById('filter-nexus-worldview');
+        const worldviewList = document.getElementById('worldview-list');
+        const storyGrid = document.getElementById('story-grid');
+        const filterStoryWorldview = document.getElementById('filter-story-worldview');
+        const editorModalOverlay = document.getElementById('editor-modal-overlay');
+        const editorModalContent = document.getElementById('editor-modal-content');
+        const detailsModalOverlay = document.getElementById('details-modal-overlay');
+        const detailsModalContent = document.getElementById('details-modal-content');
+        const customizerModalOverlay = document.getElementById('customizer-modal-overlay');
+        const customizerModalContent = document.getElementById('customizer-modal-content');
+        const toastContainer = document.getElementById('toast-container');
+        const importBtn = document.getElementById('import-btn');
+        const importFile = document.getElementById('import-file');
+        const exportBtn = document.getElementById('export-btn');
+        const themeSwitcher = document.getElementById('theme-switcher');
+        const themeNameDisplay = document.getElementById('theme-name-display');
+        const themeSelectorDropdown = document.getElementById('theme-selector-dropdown');
+        const fontUrlInput = document.getElementById('font-url-input');
+        const applyFontBtn = document.getElementById('apply-font-btn');
+
+        const themes = {
+            'light-theme': '简约亮色', 'dark-theme': '梦幻暗色', 'nostalgia-theme': '羊皮纸怀旧',
+            'mousse-theme': '生巧慕斯', 'cream-theme': '橙子奶霜', 'orange-sea-theme': '橘子海',
+            'trendy-theme': '潮流酷炫', 'concert-theme': '演唱会视觉',
+        };
+        
+        const customizableColors = {
+            '--primary-color': '主色调 (标题/高亮)',
+            '--secondary-color': '辅色调 (按钮/标签)',
+            '--bg-color': '背景色',
+            '--text-color': '主要文字颜色',
+            '--text-muted-color': '次要文字颜色',
+            '--card-bg-color': '卡片背景色',
+            '--border-color': '边框颜色',
+            '--input-bg': '输入框背景色'
+        };
+        
+        function showToast(message, type = 'success') { const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; toastContainer.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+        async function saveData() { try { await idbManager.saveData(db); populateFilters(); } catch (e) { showToast("保存数据失败！", 'error'); } }
+        async function loadData() { let data = await idbManager.loadData('main_data'); if (data && data.characters) { db = data; } else { db = JSON.parse(JSON.stringify(initialData)); await saveData(); } }
+        function showView(viewId) { views.forEach(view => view.classList.remove('active')); document.getElementById(viewId)?.classList.add('active'); mainNav.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewId)); if (viewId === 'hub-view') renderCharacterHub(); if (viewId === 'nexus-view') renderRelationshipNexus(); if (viewId === 'worldview-view') renderWorldviewList(); if (viewId === 'story-view') renderStoryList(); }
+
+        function renderRelationshipNexus() {
+            if (network) { network.destroy(); network = null; }
+            nexusContainer.innerHTML = ''; 
+            const selectedWorldviewId = filterNexusWorldview.value;
+            const filteredChars = db.characters.filter(char => !selectedWorldviewId || (char.linkedWorldviewIds || []).includes(selectedWorldviewId));
+            if (filteredChars.length < 1) { nexusContainer.innerHTML = `<div class="empty-state" style="height: 100%; display:flex; flex-direction:column; justify-content:center;"><h3>${selectedWorldviewId ? "该世界观下没有角色" : "至少需要一个角色才能显示关系网"}</h3><p>${selectedWorldviewId ? "请尝试选择“所有世界观”或为角色关联此世界观。" : "快去角色库创建一个吧！"}</p></div>`; return; }
+            const filteredCharIds = new Set(filteredChars.map(c => c.id));
+            const nodes = filteredChars.map(char => ({ id: char.id, label: char.name, shape: 'circularImage', image: char.avatar || PLACEHOLDER_IMG_URL, size: 40, font: { color: getComputedStyle(document.body).getPropertyValue('--text-color') } }));
+            const edges = [];
+            filteredChars.forEach(char => { if (char.relationships) { char.relationships.forEach(rel => { if (filteredCharIds.has(rel.targetCharId)) { edges.push({ from: char.id, to: rel.targetCharId, label: rel.relation, arrows: 'to', font: { align: 'top', color: getComputedStyle(document.body).getPropertyValue('--text-muted-color') }, color: { color: getComputedStyle(document.body).getPropertyValue('--border-color'), hover: getComputedStyle(document.body).getPropertyValue('--primary-color'), highlight: getComputedStyle(document.body).getPropertyValue('--primary-color') } }); } }); } });
+            const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+            const options = {
+                physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -80, centralGravity: 0.01, springConstant: 0.05, springLength: 280, damping: 0.6 }, minVelocity: 0.75, },
+                edges: {
+                    smooth: { type: 'curvedCW', roundness: 0.1 }
+                },
+                interaction: { dragNodes: true, dragView: true, zoomView: true, hover: true },
+                nodes: { borderWidth: 3, color: { border: getComputedStyle(document.body).getPropertyValue('--primary-color'), background: getComputedStyle(document.body).getPropertyValue('--card-bg-color'), }, shapeProperties: { useBorderWithImage: true } }
+            };
+            network = new vis.Network(nexusContainer, data, options);
+            network.on("click", params => { if (params.nodes.length > 0) { showCharacterDetails(params.nodes[0]); } });
+        }
+        
+        function renderCharacterHub() { const searchTerm = searchInput.value.toLowerCase(); const selectedGender = filterGender.value; const selectedRace = filterRace.value; const selectedWorldview = filterWorldview.value; const filtered = db.characters.filter(c => { const nameMatch = c.name.toLowerCase().includes(searchTerm); const genderMatch = !selectedGender || c.info['性别'] === selectedGender; const raceMatch = !selectedRace || c.info['种族'] === selectedRace; const worldviewMatch = !selectedWorldview || (c.linkedWorldviewIds && c.linkedWorldviewIds.includes(selectedWorldview)); return nameMatch && genderMatch && raceMatch && worldviewMatch; }); characterGrid.innerHTML = ''; if (filtered.length === 0 && db.characters.length > 0) { characterGrid.innerHTML = `<div class="empty-state"><h3>未找到匹配的角色</h3><p>请尝试调整搜索或筛选条件。</p></div>`; } else if (db.characters.length === 0) { characterGrid.innerHTML = `<div class="empty-state"><h3>角色库是空的</h3><p>点击下方的卡片开始创建你的第一个角色吧！</p></div>`; } else { characterGrid.innerHTML = filtered.map(char => ` <div class="character-card" data-id="${char.id}"> <div class="card-body" data-action="show-details" data-id="${char.id}"> <div class="card-info"> <h3>${char.name}</h3> <p>${char.info['种族'] || '未知种族'} - ${char.info['性别'] || '未知性别'}</p> </div> <img class="card-avatar" src="${char.avatar || PLACEHOLDER_IMG_URL}" alt="${char.name}" onerror="this.src='${PLACEHOLDER_IMG_URL}'"> </div> <div class="card-actions"> <button class="btn-icon" title="编辑" data-action="open-char-editor" data-id="${char.id}"><svg><use xlink:href="#icon-edit"></use></svg></button> <button class="btn-icon" title="删除" data-action="delete-char" data-id="${char.id}"><svg><use xlink:href="#icon-delete"></use></svg></button> </div> </div> `).join(''); } characterGrid.innerHTML += ` <div class="character-card add-card" data-action="open-char-editor"> <div class="add-card-icon"> <svg><use xlink:href="#icon-add"></use></svg> <span>创建新角色</span> </div> </div> `; }
+        
+        /**
+         * [新功能] renderWorldviewList - 增加时间线事件的“编辑”按钮
+         */
+        function renderWorldviewList() { if (db.worldview.length === 0) { worldviewList.innerHTML = `<div class="empty-state"><h3>这里还没有任何世界观设定</h3><p>点击下方的按钮添加一个吧。</p></div>`; return; } worldviewList.innerHTML = db.worldview.map(item => ` <details class="content-item" data-id="${item.id}"> <summary> <h3>${item.title}</h3> <div class="card-actions" style="opacity:1; visibility: visible; position:static; background:none;"> <button class="btn-icon" title="编辑" data-action="open-worldview-editor" data-id="${item.id}"><svg><use xlink:href="#icon-edit"></use></svg></button> <button class="btn-icon" title="删除" data-action="delete-worldview" data-id="${item.id}"><svg><use xlink:href="#icon-delete"></use></svg></button> </div> </summary> <div class="content-body"> <p>${item.description.replace(/\n/g, '<br>')}</p> <h4>时间线</h4> <ul class="timeline"> ${(item.timeline || []).sort((a,b) => a.year.localeCompare(b.year)).map(event => ` <li class="timeline-item" data-event-id="${event.id}"> <div class="timeline-content"> <div class="timeline-year">${event.year}</div> <p>${event.event}</p> </div> <div class="timeline-item-actions"> <button class="btn-icon" title="编辑事件" data-action="open-timeline-editor" data-world-id="${item.id}" data-event-id="${event.id}"><svg><use xlink:href="#icon-edit"></use></svg></button> <button class="btn-icon" title="删除事件" data-action="delete-timeline-event" data-world-id="${item.id}" data-event-id="${event.id}"><svg><use xlink:href="#icon-delete"></use></svg></button> </div> </li>`).join('')} </ul> <form class="add-timeline-form" data-action="add-timeline-event" data-world-id="${item.id}"> <input type="text" name="year" placeholder="年份/时期" required> <input type="text" name="event" placeholder="事件描述" required> <button type="submit" class="btn-primary">添加事件</button> </form> </div> </details> `).join(''); }
+        
+        function renderStoryList() { const selectedWorldview = filterStoryWorldview.value; const filteredStories = db.stories.filter(s => !selectedWorldview || s.worldviewId === selectedWorldview); if (filteredStories.length === 0 && db.stories.length > 0) { storyGrid.innerHTML = `<div class="empty-state"><h3>当前筛选下没有故事</h3><p>请尝试选择“所有世界观”。</p></div>`; } else if (db.stories.length === 0) { storyGrid.innerHTML = `<div class="empty-state"><h3>你还没有撰写任何故事</h3><p>点击下方的按钮开始你的创作吧。</p></div>`; } else { storyGrid.innerHTML = filteredStories.map(story => { const worldview = db.worldview.find(w => w.id === story.worldviewId); const worldviewTag = worldview ? `<span class="story-worldview-tag">${worldview.title}</span>` : ''; const charAvatars = (story.linkedCharIds || []).map(id => db.characters.find(c => c.id === id)).filter(Boolean).map(c => `<img src="${c.avatar || PLACEHOLDER_IMG_URL}" title="${c.name}">`).join(''); const isLongContent = story.content.length > STORY_PREVIEW_LENGTH; const previewContent = isLongContent ? story.content.substring(0, STORY_PREVIEW_LENGTH).replace(/\n/g, '<br>') + '...' : story.content.replace(/\n/g, '<br>'); const readMoreButton = isLongContent ? `<button class="read-more-btn" data-action="toggle-story-content" data-id="${story.id}">[ 阅读全文 ]</button>` : ''; return ` <div class="story-card" data-id="${story.id}"> ${story.illustration ? `<img src="${story.illustration}" alt="${story.title} 插图" class="story-thumbnail">` : ''} <div class="story-card-content" style="${!story.illustration ? 'width: 100%;' : ''}"> <div class="story-card-header"> <div> <h3>${story.title}</h3> ${worldviewTag} </div> <div class="card-actions" style="opacity:1; visibility: visible; position:static; background:none; flex-shrink: 0;"> <button class="btn-icon" title="编辑" data-action="open-story-editor" data-id="${story.id}"><svg><use xlink:href="#icon-edit"></use></svg></button> <button class="btn-icon" title="删除" data-action="delete-story" data-id="${story.id}"><svg><use xlink:href="#icon-delete"></use></svg></button> </div> </div> <div class="story-actors">${charAvatars}</div> <div class="story-content" data-id="${story.id}" data-expanded="false"> <p>${previewContent}</p> ${readMoreButton} </div> </div> </div>`; }).join(''); } }
+        function populateFilters() { const worldviewsHTML = db.worldview.map(w => `<option value="${w.id}">${w.title}</option>`).join(''); document.getElementById('filter-worldview').innerHTML = `<option value="">所有世界观</option>${worldviewsHTML}`; const races = new Set(db.characters.map(c => c.info['种族']).filter(Boolean)); document.getElementById('filter-race').innerHTML = '<option value="">所有种族</option>' + [...races].map(r => `<option value="${r}">${r}</option>`).join(''); document.getElementById('filter-story-worldview').innerHTML = `<option value="">所有世界观</option>${worldviewsHTML}`; filterNexusWorldview.innerHTML = `<option value="">所有世界观</option>${worldviewsHTML}`; }
+        function openModal(overlay, contentElement) { contentElement.scrollTop = 0; overlay.classList.add('active'); document.body.style.overflow = 'hidden'; }
+        function closeModal(overlay) { overlay.classList.remove('active'); document.body.style.overflow = ''; }
+        function openCharacterEditor(charId = null) { const char = charId ? db.characters.find(c => c.id === charId) : null; const title = char ? '编辑角色' : '创建新角色'; const relationshipsHtml = db.characters.filter(c => c.id !== charId).map(other => { const existingRel = char ? (char.relationships || []).find(r => r.targetCharId === other.id) : null; return `<div class="relationship-item"><span>与 <strong>${other.name}</strong> 的关系:</span><input type="text" data-rel-target-id="${other.id}" value="${existingRel ? existingRel.relation : ''}" placeholder="例如：朋友、敌人..."></div>`; }).join(''); editorModalContent.innerHTML = ` <form id="char-editor-form" class="form-container" data-id="${charId || ''}"> <button type="button" class="modal-close" data-action="close-modal">&times;</button> <h2>${title}</h2> <div class="form-grid"> <div class="form-group"><label for="char-name">姓名</label><input type="text" id="char-name" value="${char?.name || ''}" required></div> <div class="form-group"><label for="char-gender">性别</label><select id="char-gender"><option value="女" ${char?.info.性别 === '女' ? 'selected' : ''}>女</option><option value="男" ${char?.info.性别 === '男' ? 'selected' : ''}>男</option><option value="未知" ${!char || char.info.性别 === '未知' ? 'selected' : ''}>未知</option></select></div> <div class="form-group"><label for="char-race">种族</label><input type="text" id="char-race" value="${char?.info['种族'] || ''}" placeholder="例如: 人类, 精灵"></div> <div class="form-group"><label for="char-age">年龄</label><input type="text" id="char-age" value="${char?.info.年龄 || ''}"></div> <div class="form-group"><label for="char-height">身高</label><input type="text" id="char-height" value="${char?.info.身高 || ''}"></div> <div class="form-group full-width"><label>头像</label><div class="avatar-upload-group"><img id="avatar-preview" src="${char?.avatar || PLACEHOLDER_IMG_URL}"><input type="file" id="char-avatar-file" accept="image/*"></div></div> <div class="form-group full-width"><label for="char-personality">性格特点 (用英文逗号,隔开)</label><input type="text" id="char-personality" value="${(char?.personality || []).join(', ')}"></div> <div class="form-group full-width"><label for="char-story">背景故事</label><textarea id="char-story">${char?.story || ''}</textarea></div> <div class="form-group full-width"><label>关联世界观</label><div>${db.worldview.map(w => `<label style="display:inline-block; margin-right:1rem;"><input type="checkbox" name="worldview-link" value="${w.id}" ${char && (char.linkedWorldviewIds || []).includes(w.id) ? 'checked' : ''}> ${w.title}</label>`).join('') || '<p>暂无世界观，请先创建。</p>'}</div></div> <div class="form-group full-width"><label>关系网</label><div id="relationship-list">${relationshipsHtml || '<p>暂无其他角色可建立关系。</p>'}</div></div> </div> <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">保存</button> </form> `; openModal(editorModalOverlay, editorModalContent); document.getElementById('char-name').focus(); document.getElementById('char-avatar-file').addEventListener('change', e => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = event => document.getElementById('avatar-preview').src = event.target.result; reader.readAsDataURL(file); } }); }
+        async function saveCharacter(form) { const editingId = form.dataset.id; const relationships = Array.from(form.querySelectorAll('#relationship-list input')).map(input => ({ targetCharId: input.dataset.relTargetId, relation: input.value.trim() })).filter(rel => rel.relation); const charData = { id: editingId || `char_${Date.now()}`, name: form.querySelector('#char-name').value.trim(), avatar: document.getElementById('avatar-preview').src, info: { '性别': form.querySelector('#char-gender').value, '种族': form.querySelector('#char-race').value.trim(), '年龄': form.querySelector('#char-age').value.trim(), '身高': form.querySelector('#char-height').value.trim() }, personality: form.querySelector('#char-personality').value.split(',').map(s => s.trim()).filter(Boolean), story: form.querySelector('#char-story').value.trim(), linkedWorldviewIds: Array.from(form.querySelectorAll('input[name=worldview-link]:checked')).map(input => input.value), relationships: relationships }; if (!charData.name) { showToast('角色姓名不能为空！', 'error'); return; } if (editingId) { const index = db.characters.findIndex(c => c.id === editingId); db.characters[index] = charData; } else { db.characters.unshift(charData); } await saveData(); renderCharacterHub(); closeModal(editorModalOverlay); showToast('角色保存成功！', 'success'); }
+        async function deleteCharacter(charId) { if (confirm('确定要删除这个角色吗？此操作不可撤销。')) { const charName = db.characters.find(c => c.id === charId)?.name || '该角色'; db.characters = db.characters.filter(c => c.id !== charId); db.characters.forEach(char => { if(char.relationships) char.relationships = char.relationships.filter(rel => rel.targetCharId !== charId); }); db.stories.forEach(story => { if(story.linkedCharIds) story.linkedCharIds = story.linkedCharIds.filter(id => id !== charId); }); await saveData(); renderCharacterHub(); showToast(`已删除角色: ${charName}`, 'success'); } }
+        function showCharacterDetails(charId) { const char = db.characters.find(c => c.id === charId); if (!char) return; const relationshipsHTML = (char.relationships || []).map(rel => { const targetChar = db.characters.find(c => c.id === rel.targetCharId); return targetChar ? `<li><strong>与 ${targetChar.name}</strong><span>${rel.relation}</span></li>` : ''; }).join(''); const storiesHTML = db.stories.filter(s => (s.linkedCharIds || []).includes(charId)).map(s => `<a href="#" class="story-link" data-action="show-story-from-details" data-story-id="${s.id}">${s.title}</a>`).join(''); detailsModalContent.innerHTML = ` <button type="button" class="modal-close" data-action="close-modal">&times;</button> <div class="details-header"> <img src="${char.avatar || PLACEHOLDER_IMG_URL}" alt="${char.name}" onerror="this.src='${PLACEHOLDER_IMG_URL}'"> <h2>${char.name}</h2> </div> <div class="details-grid"> <div class="details-left"> <div class="details-section"><h4>基本信息</h4><ul class="details-info-list">${Object.entries(char.info).filter(([k,v]) => v).map(([key, value]) => `<li><strong>${key}</strong> <span>${value}</span></li>`).join('')}</ul></div> ${(char.personality && char.personality.length > 0) ? `<div class="details-section"><h4>性格特点</h4><div>${(char.personality || []).map(t => `<span class="tag">${t}</span>`).join('')}</div></div>` : ''} ${relationshipsHTML ? `<div class="details-section"><h4>关系网</h4><ul class="details-info-list">${relationshipsHTML}</ul></div>` : ''} ${storiesHTML ? `<div class="details-section"><h4>参演故事</h4>${storiesHTML}</div>` : ''} </div> <div class="details-right"> <div class="details-section"><h4>背景故事</h4><div class="details-story">${char.story.replace(/\n/g, '<p>')}</div></div> </div> </div> `; openModal(detailsModalOverlay, detailsModalContent); }
+        function createGenericEditor(type, id = null) { const isWorld = type === 'worldview'; const item = id ? db[type].find(i => i.id === id) : null; const title = `${item ? '编辑' : '创建'}${isWorld ? '世界观' : '故事'}`; let extraFields = ''; if (!isWorld) { const worldviewOptions = db.worldview.map(w => `<option value="${w.id}" ${item?.worldviewId === w.id ? 'selected' : ''}>${w.title}</option>`).join(''); extraFields += `<div class="form-group"><label for="story-worldview">所属世界观</label><select id="story-worldview"><option value="">无</option>${worldviewOptions}</select></div>`; extraFields += `<div class="form-group full-width"><label>参演角色</label><div>${db.characters.map(c => `<label style="display:inline-block; margin-right:1rem;"><input type="checkbox" name="char-link" value="${c.id}" ${item && (item.linkedCharIds || []).includes(c.id) ? 'checked' : ''}> ${c.name}</label>`).join('') || '<p>暂无角色可选。</p>'}</div></div>`; extraFields += ` <div class="form-group full-width"> <label>故事插图</label> <input type="file" id="story-illustration-file" accept="image/*"> <div id="illustration-preview-wrapper" class="illustration-preview-wrapper" style="display: ${item?.illustration ? 'flex' : 'none'};"> <img id="story-illustration-preview" src="${item?.illustration || ''}"> <button type="button" class="btn-secondary" data-action="remove-story-image">移除图片</button> </div> </div>`; } editorModalContent.innerHTML = ` <form id="generic-editor-form" class="form-container" data-id="${id || ''}" data-type="${type}"> <button type="button" class="modal-close" data-action="close-modal">&times;</button> <h2>${title}</h2> <div class="form-group"><label for="item-title">标题</label><input type="text" id="item-title" value="${item?.title || ''}" required></div> ${!isWorld ? extraFields : ''} <div class="form-group full-width"><label for="item-content">${isWorld ? '描述' : '内容'}</label><textarea id="item-content" required>${item ? (isWorld ? item.description : item.content) : ''}</textarea></div> <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">保存</button> </form> `; openModal(editorModalOverlay, editorModalContent); document.getElementById('item-title').focus(); if (!isWorld) { const fileInput = document.getElementById('story-illustration-file'); fileInput?.addEventListener('change', e => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = event => { const wrapper = document.getElementById('illustration-preview-wrapper'); const preview = document.getElementById('story-illustration-preview'); preview.src = event.target.result; wrapper.style.display = 'flex'; }; reader.readAsDataURL(file); } }); } }
+        async function saveGenericItem(form) { const type = form.dataset.type; const id = form.dataset.id; const isWorld = type === 'worldview'; let itemData = { id: id || `${type.slice(0,5)}_${Date.now()}`, title: form.querySelector('#item-title').value.trim(), }; if (!itemData.title) { showToast('标题不能为空！', 'error'); return; } if (isWorld) { itemData.description = form.querySelector('#item-content').value.trim(); itemData.timeline = id ? db.worldview.find(w => w.id === id).timeline : []; } else { itemData.content = form.querySelector('#item-content').value.trim(); itemData.linkedCharIds = Array.from(form.querySelectorAll('input[name=char-link]:checked')).map(i => i.value); itemData.worldviewId = form.querySelector('#story-worldview')?.value || null; const illustrationPreview = form.querySelector('#story-illustration-preview'); const wrapper = document.getElementById('illustration-preview-wrapper'); itemData.illustration = (wrapper && wrapper.style.display !== 'none' && illustrationPreview.src) ? illustrationPreview.src : null; } if (id) { const index = db[type].findIndex(i => i.id === id); db[type][index] = { ...db[type][index], ...itemData }; } else { db[type].unshift(itemData); } await saveData(); isWorld ? renderWorldviewList() : renderStoryList(); closeModal(editorModalOverlay); showToast(`${isWorld ? '世界观' : '故事'}保存成功！`, 'success'); }
+        async function deleteGenericItem(type, id) { const typeName = type === 'worldview' ? '世界观' : '故事'; if (confirm(`确定删除此${typeName}？`)) { const itemName = db[type].find(i => i.id === id)?.title || `该${typeName}`; db[type] = db[type].filter(i => i.id !== id); if (type === 'worldview') { db.characters.forEach(c => { if (c.linkedWorldviewIds) c.linkedWorldviewIds = c.linkedWorldviewIds.filter(wid => wid !== id); }); db.stories.forEach(s => { if (s.worldviewId === id) s.worldviewId = null; }); } await saveData(); type === 'worldview' ? renderWorldviewList() : renderStoryList(); showToast(`已删除: ${itemName}`, 'success'); } }
+        async function addTimelineEvent(form) { const worldId = form.dataset.worldId; const world = db.worldview.find(w => w.id === worldId); if (!world) return; if (!world.timeline) world.timeline = []; const year = form.elements.year.value.trim(); const event = form.elements.event.value.trim(); if (!year || !event) { showToast('年份和事件描述均不能为空！', 'error'); return; } world.timeline.push({ id: `event_${Date.now()}`, year, event }); await saveData(); renderWorldviewList(); const detailsElement = document.querySelector(`.content-item[data-id="${worldId}"]`); if (detailsElement) detailsElement.open = true; }
+        async function deleteTimelineEvent(worldId, eventId) { if (!confirm('确定要删除这条时间线事件吗？')) return; const world = db.worldview.find(w => w.id === worldId); if (world && world.timeline) { world.timeline = world.timeline.filter(event => event.id !== eventId); await saveData(); renderWorldviewList(); const detailsElement = document.querySelector(`.content-item[data-id="${worldId}"]`); if (detailsElement) detailsElement.open = true; showToast('事件已删除', 'success'); } }
+
+        /**
+         * [新功能] 打开时间线事件编辑弹窗
+         */
+        function openTimelineEditor(worldId, eventId) {
+            const world = db.worldview.find(w => w.id === worldId);
+            if (!world) return;
+            const event = world.timeline.find(e => e.id === eventId);
+            if (!event) return;
+
+            editorModalContent.innerHTML = `
+                <form id="timeline-editor-form" class="form-container" data-world-id="${worldId}" data-event-id="${eventId}">
+                    <button type="button" class="modal-close" data-action="close-modal">&times;</button>
+                    <h2>编辑时间线事件</h2>
+                    <div class="form-group full-width">
+                        <label for="timeline-year">年份/时期</label>
+                        <input type="text" id="timeline-year" name="year" value="${event.year}" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="timeline-event">事件描述</label>
+                        <input type="text" id="timeline-event" name="event" value="${event.event}" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">保存更改</button>
+                </form>
+            `;
+            openModal(editorModalOverlay, editorModalContent);
+            document.getElementById('timeline-year').focus();
+        }
+
+        /**
+         * [新功能] 保存修改后的时间线事件
+         */
+        async function saveTimelineEvent(form) {
+            const { worldId, eventId } = form.dataset;
+            const newYear = form.elements.year.value.trim();
+            const newEvent = form.elements.event.value.trim();
+
+            if (!newYear || !newEvent) {
+                showToast('年份和事件描述均不能为空！', 'error');
+                return;
+            }
+
+            const world = db.worldview.find(w => w.id === worldId);
+            if (world && world.timeline) {
+                const eventIndex = world.timeline.findIndex(e => e.id === eventId);
+                if (eventIndex > -1) {
+                    world.timeline[eventIndex].year = newYear;
+                    world.timeline[eventIndex].event = newEvent;
+                    
+                    await saveData();
+                    renderWorldviewList();
+                    const detailsElement = document.querySelector(`.content-item[data-id="${worldId}"]`);
+                    if (detailsElement) detailsElement.open = true; // 保持展开
+                    
+                    closeModal(editorModalOverlay);
+                    showToast('事件更新成功！', 'success');
+                }
+            }
+        }
+
+        function exportData() { const dataStr = JSON.stringify(db, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `弥世界_备份_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast('数据已导出！', 'success'); }
+        function importData(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (event) => { try { const data = JSON.parse(event.target.result); if (data.characters && data.worldview && data.stories) { if (confirm('这将覆盖您当前的所有数据，确定要导入吗？')) { db = data; db.id = 'main_data'; await saveData(); await init(); showToast('数据导入成功！', 'success'); } } else { showToast('文件格式不正确！', 'error'); } } catch (error) { showToast('导入失败，文件可能已损坏。', 'error'); } e.target.value = ''; }; reader.readAsText(file); }
+        
+        function rebuildThemeSelector() {
+            const hasCustomTheme = !!localStorage.getItem('aiMemorialCustomTheme');
+            let themeOptions = {...themes};
+            if (hasCustomTheme) {
+                themeOptions['custom-theme'] = '我的定制';
+            }
+            themeSelectorDropdown.innerHTML = Object.entries(themeOptions).map(([c, n]) => `<button class="theme-option-btn" data-action="set-theme" data-theme="${c}">${n}</button>`).join('');
+        }
+
+        function setTheme(themeClass) {
+            document.documentElement.className = '';
+            document.documentElement.classList.add(themeClass);
+            const themeName = (themes[themeClass] || '我的定制');
+            themeNameDisplay.textContent = `主题: ${themeName}`;
+            localStorage.setItem('aiMemorialTheme', themeClass);
+            themeSelectorDropdown.classList.remove('active');
+            if (document.getElementById('nexus-view').classList.contains('active')) {
+                renderRelationshipNexus();
+            }
+        }
+        
+        function applyFont() { const url = fontUrlInput.value.trim(); if (url.startsWith('https://fonts.googleapis.com/css')) { let link = document.getElementById('dynamic-font-link'); if (!link) { link = document.createElement('link'); link.id = 'dynamic-font-link'; link.rel = 'stylesheet'; document.head.appendChild(link); } link.href = url; const fontFamily = (url.match(/family=([^&:]+)/) || [])[1]?.replace(/\+/g, ' '); if (fontFamily) { document.documentElement.style.setProperty('--font-main', `'${fontFamily}', sans-serif`); localStorage.setItem('aiMemorialFontUrl', url); localStorage.setItem('aiMemorialFontFamily', fontFamily); showToast(`已应用字体: ${fontFamily}`, 'success'); } } else if (url === '') { document.documentElement.style.removeProperty('--font-main'); localStorage.removeItem('aiMemorialFontUrl'); localStorage.removeItem('aiMemorialFontFamily'); let link = document.getElementById('dynamic-font-link'); if (link) link.remove(); showToast('已恢复默认字体', 'success'); } else { showToast('请输入一个有效的 Google Fonts URL。', 'error'); } }
+        
+        function openCustomizer() {
+            const colorPickersHTML = Object.entries(customizableColors).map(([variable, label]) => {
+                const currentColor = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+                return `
+                <div class="color-picker-group">
+                    <label for="${variable}">${label}</label>
+                    <input type="color" id="${variable}" data-variable="${variable}" value="${currentColor}">
+                </div>`;
+            }).join('');
+
+            customizerModalContent.innerHTML = `
+                <button type="button" class="modal-close" data-action="close-modal">&times;</button>
+                <h2>外观调色盘</h2>
+                <div id="customizer-grid" class="customizer-grid">${colorPickersHTML}</div>
+                <div class="customizer-actions">
+                    <button class="btn-secondary" data-action="reset-custom-theme">重置为默认</button>
+                    <button class="btn-primary" data-action="save-custom-theme">保存为自定义主题</button>
+                </div>
+            `;
+            openModal(customizerModalOverlay, customizerModalContent);
+        }
+
+        function applyCustomColor(variable, color) { document.documentElement.style.setProperty(variable, color); }
+        function saveCustomTheme() { const customTheme = {}; document.querySelectorAll('#customizer-grid input[type="color"]').forEach(input => { customTheme[input.dataset.variable] = input.value; }); localStorage.setItem('aiMemorialCustomTheme', JSON.stringify(customTheme)); applySavedCustomTheme(); setTheme('custom-theme'); rebuildThemeSelector(); closeModal(customizerModalOverlay); showToast('自定义主题已保存！', 'success'); }
+        function applySavedCustomTheme() { const savedThemeJSON = localStorage.getItem('aiMemorialCustomTheme'); if (savedThemeJSON) { const savedTheme = JSON.parse(savedThemeJSON); let styleEl = document.getElementById('custom-theme-style'); if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'custom-theme-style'; document.head.appendChild(styleEl); } const cssRules = Object.entries(savedTheme).map(([variable, color]) => `${variable}: ${color};`).join(' '); styleEl.innerHTML = `html.custom-theme { ${cssRules} }`; return true; } return false; }
+        function resetCustomTheme() { if (confirm('确定要重置自定义外观吗？这将删除您保存的配色方案。')) { localStorage.removeItem('aiMemorialCustomTheme'); const styleEl = document.getElementById('custom-theme-style'); if (styleEl) styleEl.remove(); setTheme('dark-theme'); rebuildThemeSelector(); closeModal(customizerModalOverlay); showToast('自定义外观已重置。', 'success'); } }
+
+        mainNav.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') showView(e.target.dataset.view); });
+        [searchInput, filterGender, filterRace, filterWorldview].forEach(el => el.addEventListener('input', renderCharacterHub));
+        filterStoryWorldview.addEventListener('input', renderStoryList);
+        filterNexusWorldview.addEventListener('change', renderRelationshipNexus);
+        
+        document.body.addEventListener('click', e => {
+            const target = e.target;
+            const actionTarget = target.closest('[data-action]');
+            if (!target.closest('#theme-switcher') && !target.closest('#theme-selector-dropdown')) themeSelectorDropdown.classList.remove('active');
+            if (!actionTarget) return;
+            const action = actionTarget.dataset.action;
+            const id = actionTarget.dataset.id;
+            if (target.closest('summary') && (action === 'open-worldview-editor' || action === 'delete-worldview')) e.preventDefault();
+
+            switch(action) {
+                case 'open-char-editor': openCharacterEditor(id); break;
+                case 'delete-char': deleteCharacter(id); break;
+                case 'show-details': showCharacterDetails(id); break;
+                case 'open-worldview-editor': createGenericEditor('worldview', id); break;
+                case 'delete-worldview': deleteGenericItem('worldview', id); break;
+                case 'open-story-editor': createGenericEditor('stories', id); break;
+                case 'delete-story': deleteGenericItem('stories', id); break;
+                case 'toggle-story-content': { const story = db.stories.find(s => s.id === id); const contentWrapper = document.querySelector(`.story-content[data-id="${id}"]`); const isExpanded = contentWrapper.dataset.expanded === 'true'; const buttonText = isExpanded ? '[ 阅读全文 ]' : '[ 收起 ]'; const contentHTML = isExpanded ? story.content.substring(0, STORY_PREVIEW_LENGTH).replace(/\n/g, '<br>') + '...' : story.content.replace(/\n/g, '<br>'); contentWrapper.innerHTML = `<p>${contentHTML}</p><button class="read-more-btn" data-action="toggle-story-content" data-id="${story.id}">${buttonText}</button>`; contentWrapper.dataset.expanded = !isExpanded; break; }
+                case 'remove-story-image': { document.getElementById('illustration-preview-wrapper').style.display = 'none'; document.getElementById('story-illustration-preview').src = ''; document.getElementById('story-illustration-file').value = ''; break; }
+                case 'open-timeline-editor': e.preventDefault(); openTimelineEditor(actionTarget.dataset.worldId, actionTarget.dataset.eventId); break; // 新增
+                case 'delete-timeline-event': e.preventDefault(); deleteTimelineEvent(actionTarget.dataset.worldId, actionTarget.dataset.eventId); break;
+                case 'toggle-theme-menu': themeSelectorDropdown.classList.toggle('active'); break;
+                case 'set-theme': setTheme(actionTarget.dataset.theme); break;
+                case 'open-customizer': openCustomizer(); break;
+                case 'save-custom-theme': saveCustomTheme(); break;
+                case 'reset-custom-theme': resetCustomTheme(); break;
+                case 'close-modal': closeModal(editorModalOverlay); closeModal(detailsModalOverlay); closeModal(customizerModalOverlay); break;
+            }
+        });
+
+        document.body.addEventListener('submit', e => { 
+            e.preventDefault(); 
+            const form = e.target; 
+            if(form.id === 'char-editor-form') saveCharacter(form); 
+            if(form.id === 'generic-editor-form') saveGenericItem(form); 
+            if(form.id === 'timeline-editor-form') saveTimelineEvent(form); // 新增
+            if(form.matches('[data-action="add-timeline-event"]')) addTimelineEvent(form); 
+        });
+
+        customizerModalContent.addEventListener('input', e => { if (e.target.matches('input[type="color"]')) { applyCustomColor(e.target.dataset.variable, e.target.value); } });
+        [editorModalOverlay, detailsModalOverlay, customizerModalOverlay].forEach(overlay => overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay); }));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(editorModalOverlay); closeModal(detailsModalOverlay); closeModal(customizerModalOverlay); themeSelectorDropdown.classList.remove('active'); } });
+        exportBtn.addEventListener('click', exportData);
+        importBtn.addEventListener('click', () => importFile.click());
+        importFile.addEventListener('change', importData);
+        applyFontBtn.addEventListener('click', applyFont);
+        fontUrlInput.addEventListener('keydown', e => { if (e.key === 'Enter') applyFont(); });
+
+        async function init() {
+            applySavedCustomTheme();
+            rebuildThemeSelector();
+            const savedTheme = localStorage.getItem('aiMemorialTheme') || 'dark-theme';
+            setTheme(savedTheme);
+
+            const savedFontUrl = localStorage.getItem('aiMemorialFontUrl');
+            if (savedFontUrl) { fontUrlInput.value = savedFontUrl; applyFont(); }
+
+            await loadData();
+            populateFilters();
+            showView('hub-view');
+        }
+
+        init().catch(err => { console.error("初始化失败:", err); showToast("应用初始化失败，请检查浏览器设置。", "error"); });
+    });
+    </script>
+</body>
+</html>
