@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP 收容档案生成器 Final</title>
+    <style>
+        /* --- 全局与字体设置 --- */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Special+Elite&display=swap');
+
+        :root {
+            --bg-color: #fdf6e3;
+            --border-color: #dcd2b8;
+            --text-color: #1a1a1a;
+            --secondary-text-color: #555;
+            --highlight-bg: rgba(255, 235, 59, 0.3);
+            --photo-bg: #e0e0e0;
+        }
+
+        body {
+            background-color: #333;
+            font-family: 'Noto Serif SC', 'Times New Roman', serif;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        
+        /* --- 主题切换：白色主题 --- */
+        body.theme-clean {
+            --bg-color: #ffffff;
+            --border-color: #ddd;
+            --text-color: #000000;
+            --secondary-text-color: #444;
+            --highlight-bg: rgba(173, 216, 230, 0.4);
+            --photo-bg: #f0f0f0;
+        }
+
+        /* --- 主容器与纸张效果 --- */
+        .container {
+            background-color: var(--bg-color);
+            width: 800px;
+            max-width: 95%;
+            padding: 40px 50px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        /* --- 头部Logo --- */
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { width: 100px; height: 100px; border: 3px solid var(--text-color); border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2em; flex-direction: column; line-height: 1.2; }
+        .logo span { display: block; }
+
+        /* --- 优化后的文档标题 --- */
+        .document-title { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--text-color); padding-bottom: 15px; }
+        .title-cn { display: block; font-size: 2em; font-weight: 700; line-height: 1.2; font-family: 'Noto Serif SC', serif; }
+        .title-en { display: block; font-size: 0.9em; font-family: 'Special Elite', monospace; letter-spacing: 2px; color: var(--secondary-text-color); margin-top: 5px; }
+
+        .section { margin-bottom: 25px; }
+        .section-title { font-weight: bold; font-size: 1.2em; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
+
+        /* 使内容可编辑 */
+        [contenteditable="true"] { outline: none; padding: 2px 4px; transition: background-color 0.3s; }
+        [contenteditable="true"]:hover, [contenteditable="true"]:focus { background-color: var(--highlight-bg); cursor: text; }
+
+        /* --- 基本信息与照片布局 (桌面端) --- */
+        .info-grid { display: flex; gap: 30px; margin-bottom: 20px; }
+        .info-left { flex-shrink: 0; }
+        .info-right { flex-grow: 1; }
+
+        /* --- 照片容器 (证件照比例) --- */
+        .photo-container { width: 150px; height: 200px; border: 2px solid var(--secondary-text-color); background-color: var(--photo-bg); display: flex; justify-content: center; align-items: center; text-align: center; color: #888; font-size: 0.9em; cursor: pointer; overflow: hidden; background-size: cover; background-position: center; background-repeat: no-repeat; transition: background-color 0.3s; }
+        .photo-container:hover { background-color: #d0d0d0; }
+        #image-upload, #json-upload { display: none; }
+
+        .level-selector { font-family: 'Special Elite', 'Courier New', monospace; font-size: 1em; border: 1px solid #999; background: transparent; padding: 5px; }
+
+        /* --- 特殊文本样式 --- */
+        .redacted { background-color: var(--text-color); color: var(--text-color); user-select: none; }
+        s { color: var(--secondary-text-color); }
+
+        /* --- 访谈记录样式 --- */
+        #interview-log-container { border-top: 1px dashed #999; padding-top: 20px; margin-top: 20px; }
+        .interview-entry { margin-bottom: 15px; }
+        .interview-speaker { font-weight: bold; }
+        .interview-dialogue { padding-left: 20px; font-style: italic; color: #333; }
+
+        /* --- 控制按钮 --- */
+        .controls { text-align: center; padding: 15px; background-color: #fff; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .btn { background-color: #444; color: white; border: none; padding: 10px 15px; font-size: 1em; cursor: pointer; border-radius: 3px; transition: background-color 0.3s; }
+        .btn:hover { background-color: #666; }
+        .btn-import { background-color: #2a642c; }
+        .btn-import:hover { background-color: #3c8d3f; }
+        .btn-export { background-color: #285a81; }
+        .btn-export:hover { background-color: #3a7eb8; }
+        .btn-theme { background-color: #6a4c93; }
+        .btn-theme:hover { background-color: #8260b0; }
+
+        /* --- 浮动编辑工具栏 --- */
+        #editor-toolbar {
+            position: absolute;
+            display: none;
+            background-color: #222;
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .toolbar-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            margin: 2px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .toolbar-btn:hover {
+            background: #666;
+        }
+        
+        /* --- 移动端适配 --- */
+        @media (max-width: 768px) {
+            body { padding: 5px; }
+            .container { padding: 20px 15px; }
+            .info-grid { flex-direction: column-reverse; align-items: center; }
+            .photo-container { width: 180px; height: 240px; }
+            .title-cn { font-size: 1.5em; }
+            .title-en { font-size: 0.8em; letter-spacing: 1px; }
+        }
+        
+        /* --- 打印样式 --- */
+        @media print {
+            body { background-color: #fff; padding: 0; }
+            .container { box-shadow: none; border: none; max-width: 100%; }
+            .controls, #editor-toolbar { display: none; }
+            [contenteditable="true"]:hover { background-color: transparent; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="document-body">
+        <div class="header">
+            <div class="logo">
+                <span>SCP</span>
+                <span>基金会</span>
+            </div>
+        </div>
+        <div class="document-title">
+            <span class="title-cn" id="doc-title-cn" contenteditable="true">机密档案</span>
+            <span class="title-en" id="doc-title-en" contenteditable="true">SECURE. CONTAIN. PROTECT.</span>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-left">
+                <input type="file" id="image-upload" accept="image/*">
+                <label for="image-upload">
+                    <div class="photo-container" id="photo-display">
+                        <span>点击此处<br>上传图像</span>
+                    </div>
+                </label>
+            </div>
+            <div class="info-right">
+                <div class="section">
+                    <strong>项目编号：</strong>
+                    <span id="item-number" contenteditable="true">SCP-CN-XXXX-JIN</span>
+                </div>
+                <div class="section">
+                    <strong>项目等级：</strong>
+                    <select class="level-selector" id="object-class">
+                        <option value="Safe">Safe</option>
+                        <option value="Euclid" selected>Euclid</option>
+                        <option value="Keter">Keter</option>
+                        <option value="Thaumiel">Thaumiel</option>
+                        <option value="Apollyon">Apollyon</option>
+                        <option value="Archon">Archon</option>
+                        <option value="Neutralized">Neutralized</option>
+                    </select>
+                </div>
+                <div class="section">
+                    <strong>别称：</strong>
+                    <span id="item-alias" contenteditable="true">“锦绣王座的挽歌”</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title" id="title-containment" contenteditable="true">特殊收容措施</div>
+            <p id="content-containment" contenteditable="true">
+                SCP-CN-XXXX-JIN的物理实体（一件被称为“无垢之冕”的冠冕，编号为SCP-CN-XXXX-JIN-1）现被保管于Site-CN-██的贵重物品收容保险柜中。任何情况下禁止人员佩戴或尝试激活JIN-1。
+                所有关于“三月王朝”及其统治者“三月锦”的历史文献、艺术作品和民间传说均需被基金会历史部审查并进行必要的记忆删除或篡改。基金会网络AI“巡梦者”将持续监控全球网络，清除任何与该文明相关的未授权信息，特别是关于其“终末之曲”的内容。
+            </p>
+        </div>
+
+        <div class="section">
+            <div class="section-title" id="title-description" contenteditable="true">描述</div>
+            <div id="content-description" contenteditable="true">
+                <p>SCP-CN-XXXX-JIN是一个复杂的概念性与模因复合型异常，其源头指向一位已“消亡”的历史人物——“三月锦”，她是“三月王朝”（一个在公元前███年突然从历史记录中消失的文明）的末代女王。</p>
+                <p>历史残片显示，“三月锦”是一位极端的完美主义者，她痴迷于创造“绝对完美”的艺术与秩序。这种执念使她接触到了一个或多个来源不明的超维实体（推测为<span class="redacted">[数据删除]</span>）。在这些实体的蛊惑下，她试图通过一场覆盖整个王国的宏大仪式——“完美升格”——将她的王国和民众化为永恒的完美艺术品。</p>
+                <p>该仪式的结果是灾难性的。所有参与其中的民众<s>（约120万人）</s>被转化为非物质的、饱含痛苦的灵魂聚合体，被禁锢在他们生前的“完美”形象中，而整个王国则被从现实中抹除，仅在特定条件下留下可观测的现实扭曲回响。</p>
+                <p>根据对JIN-1（女王的冠冕）中残留精神印记的解读，三月锦在最后一刻意识到了自己的错误。她利用最后的力量，将所有民众的灵魂聚合体吸入冠冕，并<s>用自己的生命作为代价，将自己永远地放逐</s>，试图以此来平息他们的痛苦，并阻止异常的进一步扩散。此行为使得该异常从潜在的Keter级世界末日情景转变为目前可控的Euclid级。她本人目前被归类为已“中和”，但其概念本身仍具有高度传染性。</p>
+            </div>
+        </div>
+
+        <div id="addendum-container">
+            <div class="section addendum-item">
+                <div class="section-title" contenteditable="true">附录 XXXX-JIN.1：发现记录</div>
+                <p contenteditable="true">
+                    该项目于19██年在中国██省的一次考古发掘中被初步发现。考古队在挖掘一处无名遗址时，多名队员报告听到了“悲伤而优美的合唱”，并在随后出现严重的精神失常症状。机动特遣队“白泽-庚”介入调查，最终在遗址中心发现了被埋藏的SCP-CN-XXXX-JIN-1。所有受影响人员已接受C级记忆删除。
+                </p>
+            </div>
+        </div>
+
+        <div id="interview-log-container">
+            <div class="section interview-item">
+                <div class="section-title" contenteditable="true">访谈记录 JIN-Log-01</div>
+                <div class="interview-entry">
+                    <p class="interview-speaker" contenteditable="true"><strong>&lt;记录开始&gt;</strong></p>
+                    <p class="interview-dialogue" contenteditable="true"><strong>受访者：</strong>SCP-CN-XXXX-JIN（通过JIN-1的精神回响进行沟通）<br><strong>采访者：</strong>Dr. Alistair</p>
+                </div>
+                <div class="interview-entry">
+                    <p class="interview-speaker" contenteditable="true"><strong>Dr. Alistair:</strong> 你能听到我吗？我们称呼你为“三月锦”。</p>
+                    <p class="interview-dialogue" contenteditable="true">（长久的沉默，空气中传来微弱的、复数的哀鸣）...完美...必须...完美...</p>
+                </div>
+                <div class="interview-entry">
+                    <p class="interview-speaker" contenteditable="true"><strong>Dr. Alistair:</strong> 你的民众怎么样了？你的王国在哪里？</p>
+                    <p class="interview-dialogue" contenteditable="true">我...我将他们变成了永恒。一首不会终结的歌，一座不会腐朽的雕塑...但...他们在哭。歌声里全是...痛苦。我毁了他们...我毁了我的...一切...（精神信号急剧衰弱）</p>
+                </div>
+                 <div class="interview-entry">
+                    <p class="interview-speaker" contenteditable="true"><strong>&lt;记录结束&gt;</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="addAddendum()">增加附录</button>
+        <button class="btn" onclick="addInterviewEntry()">增加对话条目</button>
+        <button class="btn btn-export" onclick="exportToJson()">导出为JSON</button>
+        <label for="json-upload" class="btn btn-import">导入JSON文件</label>
+        <input type="file" id="json-upload" accept=".json" onchange="importFromJson(event)">
+        <button class="btn btn-theme" onclick="toggleTheme()">切换外观</button>
+        <button class="btn" onclick="window.print()">打印 / 另存为PDF</button>
+    </div>
+
+    <div id="editor-toolbar">
+        <button class="toolbar-btn" onclick="applyFormat('strikeThrough')">划线</button>
+        <button class="toolbar-btn" onclick="applyFormat('redact')">涂抹</button>
+    </div>
+
+    <script>
+        // --- 初始加载时应用保存的主题 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('scp-archive-theme') || 'parchment';
+            if (savedTheme === 'clean') {
+                document.body.classList.add('theme-clean');
+            }
+        });
+
+        // --- 图片上传功能 ---
+        const imageUpload = document.getElementById('image-upload');
+        const photoDisplay = document.getElementById('photo-display');
+        photoDisplay.addEventListener('click', () => imageUpload.click());
+        imageUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoDisplay.style.backgroundImage = `url(${e.target.result})`;
+                    photoDisplay.innerHTML = '';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- 动态增加附录功能 ---
+        function addAddendum() {
+            const container = document.getElementById('addendum-container');
+            const addendumCount = container.getElementsByClassName('addendum-item').length + 1;
+            const newAddendum = document.createElement('div');
+            newAddendum.className = 'section addendum-item';
+            newAddendum.innerHTML = `
+                <div class="section-title" contenteditable="true">附录 XXXX-JIN.${addendumCount}：新条目</div>
+                <p contenteditable="true">在此处输入附录内容...</p>`;
+            container.appendChild(newAddendum);
+            newAddendum.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        // --- 动态增加访谈条目功能 ---
+        function addInterviewEntry() {
+            const container = document.getElementById('interview-log-container');
+            const newEntry = document.createElement('div');
+            newEntry.className = 'interview-entry';
+            newEntry.innerHTML = `
+                <p class="interview-speaker" contenteditable="true"><strong>发言人:</strong></p>
+                <p class="interview-dialogue" contenteditable="true">对话内容...</p>`;
+            const interviewItems = container.getElementsByClassName('interview-item');
+            if (interviewItems.length > 0) {
+                interviewItems[interviewItems.length - 1].appendChild(newEntry);
+            } else {
+                 const newInterview = document.createElement('div');
+                 newInterview.className = 'section interview-item';
+                 newInterview.innerHTML = `<div class="section-title" contenteditable="true">访谈记录 JIN-Log-${container.getElementsByClassName('interview-item').length + 1}</div>`;
+                 newInterview.appendChild(newEntry);
+                 container.appendChild(newInterview);
+            }
+            newEntry.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+        
+        // --- 主题切换功能 ---
+        function toggleTheme() {
+            document.body.classList.toggle('theme-clean');
+            const currentTheme = document.body.classList.contains('theme-clean') ? 'clean' : 'parchment';
+            localStorage.setItem('scp-archive-theme', currentTheme);
+        }
+
+        // --- 浮动编辑工具栏 ---
+        const toolbar = document.getElementById('editor-toolbar');
+        let currentEditableElement = null;
+        let hideToolbarTimeout;
+
+        document.addEventListener('focusin', (e) => {
+            if (e.target.isContentEditable) {
+                clearTimeout(hideToolbarTimeout);
+                currentEditableElement = e.target;
+                toolbar.style.display = 'block';
+                const rect = e.target.getBoundingClientRect();
+                toolbar.style.left = `${window.scrollX + rect.left}px`;
+                toolbar.style.top = `${window.scrollY + rect.top - toolbar.offsetHeight - 5}px`;
+            }
+        });
+
+        document.addEventListener('focusout', (e) => {
+            // 延迟隐藏，以便可以点击工具栏按钮
+            hideToolbarTimeout = setTimeout(() => {
+                toolbar.style.display = 'none';
+            }, 200);
+        });
+
+        toolbar.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // 防止编辑器失去焦点
+        });
+
+        function applyFormat(command) {
+            if (!currentEditableElement) return;
+            currentEditableElement.focus(); // 确保焦点在元素上
+
+            if (command === 'strikeThrough') {
+                document.execCommand('strikeThrough', false, null);
+            } else if (command === 'redact') {
+                const selection = window.getSelection();
+                if (!selection.rangeCount || selection.isCollapsed) return;
+
+                const range = selection.getRangeAt(0);
+                const span = document.createElement('span');
+                span.className = 'redacted';
+                
+                try {
+                    // 环绕选中内容
+                    range.surroundContents(span);
+                } catch (e) {
+                    // 如果选中内容跨越了HTML标签，surroundContents会失败
+                    // 这是一个简化的处理，对于复杂情况可能不完美
+                    span.textContent = selection.toString();
+                    range.deleteContents();
+                    range.insertNode(span);
+                }
+                selection.removeAllRanges(); // 清除选择
+            }
+        }
+
+        // --- JSON 导出/导入功能 ---
+        function exportToJson() {
+            const data = { staticContent: {}, addendums: [], interviews: [] };
+            const staticIds = ['doc-title-cn', 'doc-title-en', 'item-number', 'item-alias', 'title-containment', 'content-containment', 'title-description', 'content-description'];
+            staticIds.forEach(id => { data.staticContent[id] = document.getElementById(id)?.innerHTML; });
+            data.staticContent['object-class'] = document.getElementById('object-class').value;
+            data.staticContent['photo-display'] = document.getElementById('photo-display').style.backgroundImage;
+
+            document.querySelectorAll('#addendum-container .addendum-item').forEach(item => data.addendums.push({ title: item.querySelector('.section-title').innerHTML, content: item.querySelector('p').innerHTML }));
+            document.querySelectorAll('#interview-log-container .interview-item').forEach(item => {
+                const interview = { title: item.querySelector('.section-title').innerHTML, entries: [] };
+                item.querySelectorAll('.interview-entry').forEach(entry => interview.entries.push({ speaker: entry.querySelector('.interview-speaker')?.innerHTML || '', dialogue: entry.querySelector('.interview-dialogue')?.innerHTML || '' }));
+                data.interviews.push(interview);
+            });
+            
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `scp-archive-${data.staticContent['item-number'] || 'untitled'}.json`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            a.remove();
+        }
+
+        function importFromJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    for (const id in data.staticContent) {
+                        if (id === 'object-class') document.getElementById('object-class').value = data.staticContent[id];
+                        else if (id === 'photo-display') {
+                            const photoElement = document.getElementById('photo-display');
+                            photoElement.style.backgroundImage = data.staticContent[id];
+                            if(data.staticContent[id]) photoElement.innerHTML = '';
+                        } else {
+                            document.getElementById(id).innerHTML = data.staticContent[id];
+                        }
+                    }
+
+                    const addendumContainer = document.getElementById('addendum-container');
+                    addendumContainer.innerHTML = '';
+                    data.addendums.forEach(item => {
+                        const newAddendum = document.createElement('div');
+                        newAddendum.className = 'section addendum-item';
+                        newAddendum.innerHTML = `<div class="section-title" contenteditable="true">${item.title}</div><p contenteditable="true">${item.content}</p>`;
+                        addendumContainer.appendChild(newAddendum);
+                    });
+
+                    const interviewContainer = document.getElementById('interview-log-container');
+                    interviewContainer.innerHTML = '';
+                    data.interviews.forEach(item => {
+                        const newInterview = document.createElement('div');
+                        newInterview.className = 'section interview-item';
+                        let entriesHtml = '';
+                        item.entries.forEach(entry => {
+                            entriesHtml += `<div class="interview-entry"><p class="interview-speaker" contenteditable="true">${entry.speaker}</p><p class="interview-dialogue" contenteditable="true">${entry.dialogue}</p></div>`;
+                        });
+                        newInterview.innerHTML = `<div class="section-title" contenteditable="true">${item.title}</div>${entriesHtml}`;
+                        interviewContainer.appendChild(newInterview);
+                    });
+                    alert('档案导入成功！');
+                } catch (error) {
+                    console.error('导入JSON文件失败:', error);
+                    alert('导入失败，请确保文件格式正确。');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
